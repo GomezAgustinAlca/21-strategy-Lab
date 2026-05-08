@@ -16,6 +16,7 @@ const CARD_VALUES = [
 const DECK_OPTIONS = [1, 2, 6, 8];
 const STORAGE_KEY = 'strategy-lab-session-v4';
 const TRAINING_STORAGE_KEY = 'strategy-lab-training-v1';
+const DRILL_HISTORY_KEY    = 'strategy-lab-drill-history-v1';
 
 // ---------------------------------------------------------------------------
 // Audio
@@ -838,7 +839,7 @@ function ProModal({ open, onClose }) {
 const TABS = [
   { id: 'live',      label: 'Live Session', dot: true },
   { id: 'training',  label: 'Training' },
-  { id: 'analytics', label: 'Analytics',    locked: true },
+  { id: 'analytics', label: 'Analytics' },
   { id: 'stealth',   label: 'Stealth',      locked: true },
 ];
 
@@ -1221,6 +1222,168 @@ function saveTrainingStats(s) {
   try { localStorage.setItem(TRAINING_STORAGE_KEY, JSON.stringify(s)); } catch {}
 }
 
+function loadDrillHistory() {
+  try {
+    const raw = localStorage.getItem(DRILL_HISTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch { return []; }
+}
+
+function appendDrillHistory(entry) {
+  try {
+    const history = loadDrillHistory();
+    history.unshift(entry);
+    localStorage.setItem(DRILL_HISTORY_KEY, JSON.stringify(history.slice(0, 200)));
+  } catch {}
+}
+
+function computeInsights(history) {
+  if (history.length < 3) {
+    return [{ text: 'Complete a few more drills to generate personalized insights.', tone: 'muted' }];
+  }
+
+  const insights = [];
+
+  // Speed weakness detection
+  const bySpeed = {};
+  for (const d of history) {
+    if (!bySpeed[d.speed]) bySpeed[d.speed] = [];
+    bySpeed[d.speed].push(d.accuracy);
+  }
+  const speedAvgs = Object.entries(bySpeed)
+    .filter(([, arr]) => arr.length >= 2)
+    .map(([speed, arr]) => ({ speed, avg: arr.reduce((s, v) => s + v, 0) / arr.length }));
+  if (speedAvgs.length >= 2) {
+    const sorted = [...speedAvgs].sort((a, b) => b.avg - a.avg);
+    const best = sorted[0];
+    const worst = sorted[sorted.length - 1];
+    const gap = best.avg - worst.avg;
+    const wLabel = worst.speed.charAt(0).toUpperCase() + worst.speed.slice(1);
+    const bLabel = best.speed.charAt(0).toUpperCase() + best.speed.slice(1);
+    if (gap >= 12) {
+      insights.push({ text: `Accuracy drops significantly in ${wLabel} mode (${Math.round(worst.avg)}% avg vs ${Math.round(best.avg)}% in ${bLabel}).`, tone: 'amber' });
+    } else if (gap <= 5) {
+      insights.push({ text: `Strong consistency across speeds — performance is stable regardless of tempo.`, tone: 'green' });
+    } else {
+      insights.push({ text: `You perform best on ${bLabel} speed — ${Math.round(best.avg)}% average accuracy.`, tone: 'green' });
+    }
+  }
+
+  // Card count weakness
+  const byCount = {};
+  for (const d of history) {
+    if (!byCount[d.cardCount]) byCount[d.cardCount] = [];
+    byCount[d.cardCount].push(d.accuracy);
+  }
+  const countAvgs = Object.entries(byCount)
+    .filter(([, arr]) => arr.length >= 2)
+    .map(([count, arr]) => ({ count: parseInt(count), avg: arr.reduce((s, v) => s + v, 0) / arr.length }))
+    .sort((a, b) => a.count - b.count);
+  if (countAvgs.length >= 2) {
+    const smallest = countAvgs[0];
+    const largest  = countAvgs[countAvgs.length - 1];
+    const drop = smallest.avg - largest.avg;
+    if (drop >= 10) {
+      insights.push({ text: `Performance decreases after ${smallest.count} cards — accuracy falls ${drop.toFixed(0)}% in longer drills.`, tone: 'amber' });
+    } else if (drop < 5 && countAvgs.length >= 2) {
+      insights.push({ text: `Drill length has minimal impact — accuracy holds steady up to ${largest.count} cards.`, tone: 'green' });
+    }
+  }
+
+  // Accuracy trend: recent 5 vs prior 5
+  if (history.length >= 8) {
+    const recent = history.slice(0, 5);
+    const prior  = history.slice(5, 10);
+    if (prior.length >= 3) {
+      const rAvg = recent.reduce((s, d) => s + d.accuracy, 0) / recent.length;
+      const pAvg = prior.reduce((s, d) => s + d.accuracy, 0) / prior.length;
+      const diff = rAvg - pAvg;
+      if (diff >= 5) {
+        insights.push({ text: `Improving — accuracy up ${diff.toFixed(0)}% over your last 10 drills.`, tone: 'green' });
+      } else if (diff <= -5) {
+        insights.push({ text: `Recent dip — accuracy down ${Math.abs(diff).toFixed(0)}% compared to prior session. Focus on precision.`, tone: 'amber' });
+      }
+    }
+  }
+
+  // Medium consistency
+  if (insights.length < 3) {
+    const medDrills = history.filter(d => d.speed === 'medium');
+    if (medDrills.length >= 3) {
+      const medAccs = medDrills.map(d => d.accuracy);
+      const medAvg  = medAccs.reduce((s, v) => s + v, 0) / medAccs.length;
+      const medVar  = medAccs.reduce((s, v) => s + Math.pow(v - medAvg, 2), 0) / medAccs.length;
+      if (Math.sqrt(medVar) < 8 && medAvg > 75) {
+        insights.push({ text: `Strong consistency in Medium drills — ${Math.round(medAvg)}% avg with low variance.`, tone: 'green' });
+      }
+    }
+  }
+
+  // Exceptional precision
+  if (insights.length < 3) {
+    const avgErr = history.reduce((s, d) => s + d.error, 0) / history.length;
+    if (history.length >= 5 && avgErr <= 0.5) {
+      insights.push({ text: `Exceptional precision — average drift of only ±${avgErr.toFixed(1)} across ${history.length} drills.`, tone: 'green' });
+    }
+  }
+
+  if (insights.length === 0) {
+    insights.push({ text: 'Keep drilling across different settings to unlock personalized insights.', tone: 'muted' });
+  }
+
+  return insights.slice(0, 4);
+}
+
+function computePerformanceMatrix(history) {
+  const speeds = ['slow', 'medium', 'fast'];
+  const sizes  = [20, 40, 60];
+  const cells  = {};
+  for (const speed of speeds) {
+    for (const size of sizes) {
+      const drills = history.filter(d => d.speed === speed && d.cardCount === size);
+      cells[`${speed}-${size}`] = drills.length === 0
+        ? { count: 0, avgAccuracy: null }
+        : { count: drills.length, avgAccuracy: Math.round(drills.reduce((s, d) => s + d.accuracy, 0) / drills.length) };
+    }
+  }
+  return { cells, speeds, sizes };
+}
+
+function computeDriftAnalysis(history) {
+  const valid = history.filter(d => typeof d.answer === 'number' && typeof d.correctCount === 'number');
+  if (valid.length < 3) return null;
+  const deltas   = valid.map(d => d.answer - d.correctCount);
+  const avgDrift = deltas.reduce((s, v) => s + v, 0) / deltas.length;
+  const bySpeed  = {};
+  for (const sp of ['slow', 'medium', 'fast']) {
+    const sps = valid.filter(d => d.speed === sp);
+    if (sps.length >= 2) {
+      const sd = sps.map(d => d.answer - d.correctCount);
+      bySpeed[sp] = { count: sps.length, avgDrift: sd.reduce((s, v) => s + v, 0) / sd.length };
+    }
+  }
+  return {
+    avgDrift,
+    count: valid.length,
+    direction: avgDrift > 0.35 ? 'over' : avgDrift < -0.35 ? 'under' : 'balanced',
+    bySpeed,
+  };
+}
+
+function computeConsistencyScore(history) {
+  if (history.length < 3) return null;
+  const accs    = history.map(d => d.accuracy);
+  const mean    = accs.reduce((s, v) => s + v, 0) / accs.length;
+  const variance = accs.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / accs.length;
+  const stdDev  = Math.sqrt(variance);
+  const score   = Math.max(0, Math.round(100 - stdDev * 2.8));
+  const label   = score >= 80 ? 'High' : score >= 55 ? 'Moderate' : 'Low';
+  const tone    = score >= 80 ? 'green' : score >= 55 ? 'gold' : 'red';
+  return { score, stdDev: stdDev.toFixed(1), label, tone };
+}
+
 function buildShoe(decks) {
   const shoe = [];
   for (let d = 0; d < decks; d++) {
@@ -1471,9 +1634,21 @@ function DrillResultMetric({ label, value, accent }) {
 }
 
 function DrillResult({ result, onRetry, onReset }) {
-  const { answer, correctCount, accuracy, isExact, elapsedMs, cardCount } = result;
+  const { answer, correctCount, accuracy, isExact, elapsedMs, cardCount, deckCount } = result;
   const secs = (elapsedMs / 1000).toFixed(1);
-  const diff = answer - correctCount;
+  const absDiff = Math.abs(answer - correctCount);
+
+  const decksRemaining = Math.max(0.01, (deckCount * 52 - cardCount) / 52);
+  const trueCount = correctCount / decksRemaining;
+  const trueCountStr = (trueCount >= 0 ? '+' : '') + trueCount.toFixed(2);
+
+  const explanation =
+    absDiff === 0 ? 'Perfect tracking.' :
+    absDiff === 1 ? 'Very close — minor tracking drift.' :
+    absDiff <= 3  ? 'Close, but the count drifted.' :
+                    'Significant drift — slow down or reduce card count.';
+
+  const fmtRC = n => (n >= 0 ? `+${n}` : `${n}`);
 
   return (
     <div className="drill-result">
@@ -1481,31 +1656,48 @@ function DrillResult({ result, onRetry, onReset }) {
         <div className="drill-result__hero-icon">
           {isExact ? <Check size={26} /> : <span className="drill-result__x">✕</span>}
         </div>
-        <div className="drill-result__hero-label">{isExact ? 'Perfect Count!' : `Off by ${Math.abs(diff)}`}</div>
-        {!isExact && (
-          <div className="drill-result__hero-sub">
-            {diff > 0 ? `You counted ${diff} too high` : `You counted ${Math.abs(diff)} too low`}
+        <div className="drill-result__hero-label">{isExact ? 'Perfect Count!' : `Off by ${absDiff}`}</div>
+        <div className="drill-result__explanation">{explanation}</div>
+      </div>
+
+      <div className="drill-count-summary">
+        <div className="drill-count-summary__main">
+          <div className="drill-count-summary__eyebrow">Correct Running Count</div>
+          <div className={`drill-count-summary__rc ${correctCount > 0 ? 'drill-count-summary__rc--pos' : correctCount < 0 ? 'drill-count-summary__rc--neg' : ''}`}>
+            {fmtRC(correctCount)}
           </div>
-        )}
+        </div>
+        <div className="drill-count-summary__row">
+          <div className="drill-count-summary__cell">
+            <div className="drill-count-summary__cell-lbl">Your Answer</div>
+            <div className={`drill-count-summary__cell-val ${isExact ? 'drill-count-summary__cell-val--green' : 'drill-count-summary__cell-val--red'}`}>
+              {fmtRC(answer)}
+            </div>
+          </div>
+          <div className="drill-count-summary__divider" aria-hidden />
+          <div className="drill-count-summary__cell">
+            <div className="drill-count-summary__cell-lbl">Off by</div>
+            <div className={`drill-count-summary__cell-val ${absDiff === 0 ? 'drill-count-summary__cell-val--green' : absDiff === 1 ? 'drill-count-summary__cell-val--gold' : 'drill-count-summary__cell-val--red'}`}>
+              {absDiff}
+            </div>
+          </div>
+          <div className="drill-count-summary__divider" aria-hidden />
+          <div className="drill-count-summary__cell">
+            <div className="drill-count-summary__cell-lbl">True Count</div>
+            <div className={`drill-count-summary__cell-val ${trueCount >= 2 ? 'drill-count-summary__cell-val--green' : trueCount <= -2 ? 'drill-count-summary__cell-val--red' : 'drill-count-summary__cell-val--gold'}`}>
+              {trueCountStr}
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="drill-result__metrics">
-        <DrillResultMetric
-          label="Correct Count"
-          value={correctCount >= 0 ? `+${correctCount}` : `${correctCount}`}
-          accent={correctCount > 0 ? 'green' : correctCount < 0 ? 'red' : ''}
-        />
-        <DrillResultMetric
-          label="Your Answer"
-          value={answer >= 0 ? `+${answer}` : `${answer}`}
-          accent={isExact ? 'green' : 'red'}
-        />
         <DrillResultMetric
           label="Accuracy"
           value={`${accuracy}%`}
           accent={accuracy === 100 ? 'green' : accuracy >= 80 ? 'gold' : 'red'}
         />
-        <DrillResultMetric label="Cards" value={cardCount} />
+        <DrillResultMetric label="Cards Tracked" value={cardCount} />
         <DrillResultMetric label="Time" value={`${secs}s`} />
       </div>
 
@@ -1595,7 +1787,21 @@ function TrainingTab({ soundEnabled }) {
       return next;
     });
 
-    setResult({ answer, correctCount, accuracy, isExact, elapsedMs, cardCount: drillCards.length });
+    appendDrillHistory({
+      id:           Date.now(),
+      date:         new Date().toISOString(),
+      speed:        config.speed,
+      deckCount:    config.deckCount,
+      cardCount:    drillCards.length,
+      correctCount,
+      answer,
+      error:        diff,
+      accuracy,
+      elapsedMs,
+      isExact,
+    });
+
+    setResult({ answer, correctCount, accuracy, isExact, elapsedMs, cardCount: drillCards.length, deckCount: config.deckCount });
     setPhase('result');
   }, [correctCount, elapsedMs, drillCards.length]);
 
@@ -1636,6 +1842,454 @@ function TrainingTab({ soundEnabled }) {
   }
 
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// Analytics — components
+// ---------------------------------------------------------------------------
+function AnalyticsMetric({ label, value, suffix = '', tone = 'default' }) {
+  return (
+    <div className={`an-metric an-metric--${tone}`}>
+      <div className="an-metric__val">
+        {value}
+        {suffix && <span className="an-metric__sfx">{suffix}</span>}
+      </div>
+      <div className="an-metric__lbl">{label}</div>
+    </div>
+  );
+}
+
+function PerformanceTrend({ accuracyPoints, errorPoints, count }) {
+  const safePts = (pts) => (pts.length < 2 ? [...pts, ...pts] : pts);
+  return (
+    <div className="an-trend panel">
+      <div className="panel__title-row">
+        <div className="panel__title">Performance Trend</div>
+        <div className="panel__sub">Last {count} drills · oldest → newest</div>
+      </div>
+      <div className="an-trend__charts">
+        <div className="an-trend__chart">
+          <div className="an-trend__chart-hd">
+            <span className="an-trend__chart-lbl an-trend__chart-lbl--green">Accuracy</span>
+            <span className="an-trend__chart-range">
+              {Math.min(...accuracyPoints)}% – {Math.max(...accuracyPoints)}%
+            </span>
+          </div>
+          <div className="an-trend__spark">
+            <Sparkline points={safePts(accuracyPoints)} color="#10b981" width={400} height={72} />
+          </div>
+        </div>
+        <div className="an-trend__chart">
+          <div className="an-trend__chart-hd">
+            <span className="an-trend__chart-lbl an-trend__chart-lbl--amber">Error (drift)</span>
+            <span className="an-trend__chart-range">
+              ±{Math.min(...errorPoints)} – ±{Math.max(...errorPoints)} pts
+            </span>
+          </div>
+          <div className="an-trend__spark">
+            <Sparkline
+              points={safePts(errorPoints.map(v => Math.max(v, 0)))}
+              color="#f59e0b"
+              width={400}
+              height={72}
+              filled={false}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InsightSection({ insights }) {
+  return (
+    <div className="an-insights">
+      <div className="an-insights__hd">Insights</div>
+      <div className="an-insights__list">
+        {insights.map((ins, i) => (
+          <div className={`an-insight an-insight--${ins.tone}`} key={i}>
+            <div className="an-insight__dot" />
+            <div className="an-insight__text">{ins.text}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DrillHistoryTable({ history }) {
+  const fmtDate = (iso) => {
+    try {
+      const d = new Date(iso);
+      return (
+        d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) +
+        ' ' +
+        d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+      );
+    } catch { return '—'; }
+  };
+  const fmtRC = (n) => (n >= 0 ? `+${n}` : `${n}`);
+
+  return (
+    <div className="an-hist panel">
+      <div className="panel__title-row">
+        <div className="panel__title">Recent Drills</div>
+        <div className="panel__sub">{history.length} entries</div>
+      </div>
+      <div className="an-hist__scroll">
+        <table className="an-hist-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Speed</th>
+              <th>Decks</th>
+              <th>Cards</th>
+              <th>Correct RC</th>
+              <th>Your Answer</th>
+              <th>Error</th>
+              <th>Accuracy</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {history.map((d, i) => {
+              const accTone = d.accuracy === 100 ? 'green' : d.accuracy >= 80 ? 'gold' : 'red';
+              const errTone = d.error === 0 ? 'green' : d.error <= 2 ? 'gold' : 'red';
+              return (
+                <tr key={d.id || i} className={d.isExact ? 'an-hist-row--exact' : ''}>
+                  <td className="an-hist__date">{fmtDate(d.date)}</td>
+                  <td className="an-hist__speed">
+                    {d.speed ? d.speed.charAt(0).toUpperCase() + d.speed.slice(1) : '—'}
+                  </td>
+                  <td>{d.deckCount}</td>
+                  <td>{d.cardCount}</td>
+                  <td className="an-hist__rc">{fmtRC(d.correctCount)}</td>
+                  <td className={`an-hist__ans ${d.isExact ? 'an-hist__ans--exact' : ''}`}>
+                    {fmtRC(d.answer)}
+                  </td>
+                  <td className={`an-hist__err an-hist__err--${errTone}`}>±{d.error}</td>
+                  <td className={`an-hist__acc an-hist__acc--${accTone}`}>{d.accuracy}%</td>
+                  <td className="an-hist__time">{(d.elapsedMs / 1000).toFixed(1)}s</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Analytics — Performance Matrix
+// ---------------------------------------------------------------------------
+function PerformanceMatrix({ matrix }) {
+  const { cells, speeds, sizes } = matrix;
+  const getCellTone = (acc) => {
+    if (acc === null) return 'empty';
+    if (acc >= 85) return 'green';
+    if (acc >= 65) return 'gold';
+    return 'red';
+  };
+  return (
+    <div className="perf-matrix panel">
+      <div className="panel__title-row">
+        <div>
+          <div className="panel__title">Performance Matrix</div>
+          <div className="panel__sub">Avg accuracy · Speed × Cards</div>
+        </div>
+      </div>
+      <div className="perf-matrix__grid">
+        <div className="perf-matrix__corner" />
+        {sizes.map(sz => (
+          <div key={sz} className="perf-matrix__col-hd">{sz} cards</div>
+        ))}
+        {speeds.map(sp => (
+          <React.Fragment key={sp}>
+            <div className="perf-matrix__row-hd">{sp.charAt(0).toUpperCase() + sp.slice(1)}</div>
+            {sizes.map(sz => {
+              const cell = cells[`${sp}-${sz}`];
+              const tone = getCellTone(cell.avgAccuracy);
+              return (
+                <div key={`${sp}-${sz}`} className={`perf-matrix__cell perf-matrix__cell--${tone}`}>
+                  {cell.avgAccuracy !== null ? (
+                    <>
+                      <div className="perf-matrix__cell-acc">{cell.avgAccuracy}%</div>
+                      <div className="perf-matrix__cell-n">{cell.count}×</div>
+                    </>
+                  ) : (
+                    <div className="perf-matrix__cell-dash">—</div>
+                  )}
+                </div>
+              );
+            })}
+          </React.Fragment>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Analytics — Drift Analysis
+// ---------------------------------------------------------------------------
+function DriftPanel({ drift }) {
+  if (!drift) {
+    return (
+      <div className="drift-panel panel">
+        <div className="panel__title-row">
+          <div className="panel__title">Drift Analysis</div>
+          <div className="panel__sub">Signed error pattern</div>
+        </div>
+        <div className="drift-panel__need-data">Complete 3+ drills to unlock.</div>
+      </div>
+    );
+  }
+  const { avgDrift, direction, bySpeed } = drift;
+  const tone = direction === 'balanced' ? 'green' : 'amber';
+  const dirLabel = direction === 'over'
+    ? 'Overcounting'
+    : direction === 'under'
+    ? 'Undercounting'
+    : 'Balanced';
+  const desc = direction === 'over'
+    ? `You tend to overcount by +${avgDrift.toFixed(1)} on average.`
+    : direction === 'under'
+    ? `You tend to undercount by ${Math.abs(avgDrift).toFixed(1)} on average.`
+    : 'Your drift is minimal — well-balanced counting.';
+  const speedKeys = ['slow', 'medium', 'fast'].filter(s => bySpeed[s]);
+  return (
+    <div className="drift-panel panel">
+      <div className="panel__title-row">
+        <div className="panel__title">Drift Analysis</div>
+        <div className={`drift-panel__badge drift-panel__badge--${tone}`}>{dirLabel}</div>
+      </div>
+      <div className={`drift-panel__main drift-panel__main--${tone}`}>
+        <div className="drift-panel__num">
+          {avgDrift >= 0 ? '+' : ''}{avgDrift.toFixed(1)}
+        </div>
+        <div className="drift-panel__desc">{desc}</div>
+      </div>
+      {speedKeys.length >= 2 && (
+        <div className="drift-panel__breakdown">
+          {speedKeys.map(sp => {
+            const d = bySpeed[sp].avgDrift;
+            const dTone = Math.abs(d) > 0.5 ? 'warn' : 'ok';
+            return (
+              <div key={sp} className="drift-panel__item">
+                <span className="drift-panel__item-speed">{sp.charAt(0).toUpperCase() + sp.slice(1)}</span>
+                <span className={`drift-panel__item-val drift-panel__item-val--${dTone}`}>
+                  {d >= 0 ? '+' : ''}{d.toFixed(1)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Analytics — Consistency Score
+// ---------------------------------------------------------------------------
+function ConsistencyPanel({ consistency }) {
+  if (!consistency) {
+    return (
+      <div className="consistency-panel panel">
+        <div className="panel__title-row">
+          <div className="panel__title">Consistency</div>
+        </div>
+        <div className="consistency-panel__need-data">Complete 3+ drills to unlock.</div>
+      </div>
+    );
+  }
+  const { score, stdDev, label, tone } = consistency;
+  return (
+    <div className="consistency-panel panel">
+      <div className="panel__title-row">
+        <div className="panel__title">Consistency</div>
+        <div className={`consistency-panel__badge consistency-panel__badge--${tone}`}>{label}</div>
+      </div>
+      <div className="consistency-panel__score-row">
+        <span className={`consistency-panel__score consistency-panel__score--${tone}`}>{score}</span>
+        <span className="consistency-panel__denom">/100</span>
+      </div>
+      <div className="consistency-panel__track">
+        <div
+          className={`consistency-panel__fill consistency-panel__fill--${tone}`}
+          style={{ width: `${score}%` }}
+        />
+      </div>
+      <div className="consistency-panel__meta">σ {stdDev} — stability across all drills</div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Analytics — Recent Trend
+// ---------------------------------------------------------------------------
+function RecentTrendRow({ history }) {
+  if (history.length < 2) return null;
+  const recent = history.slice(0, Math.min(8, history.length));
+  const points = [...recent].reverse().map(d => d.accuracy);
+  const recentAvg = history.slice(0, 5).reduce((s, d) => s + d.accuracy, 0) / Math.min(5, history.length);
+  const priorAvg  = history.length >= 6
+    ? history.slice(5, 10).reduce((s, d) => s + d.accuracy, 0) / Math.min(5, history.length - 5)
+    : null;
+  const diff = priorAvg !== null ? recentAvg - priorAvg : null;
+  const trendDir = diff === null ? 'neutral' : diff >= 3 ? 'up' : diff <= -3 ? 'down' : 'neutral';
+  const trendColor = trendDir === 'up' ? '#10b981' : trendDir === 'down' ? '#f43f5e' : '#4fa8cc';
+
+  const recentDrifts = history
+    .slice(0, 5)
+    .filter(d => typeof d.answer === 'number' && typeof d.correctCount === 'number')
+    .map(d => d.answer - d.correctCount);
+  const recentDrift = recentDrifts.length > 0
+    ? recentDrifts.reduce((s, v) => s + v, 0) / recentDrifts.length
+    : null;
+
+  return (
+    <div className="recent-trend panel">
+      <div className="panel__title-row">
+        <div className="panel__title">Recent Trend</div>
+        <div className="panel__sub">Last {recent.length} drills</div>
+      </div>
+      <div className="recent-trend__body">
+        <div className="recent-trend__spark">
+          <Sparkline points={points} color={trendColor} height={52} width={260} />
+        </div>
+        <div className="recent-trend__stats">
+          <div className="recent-trend__stat">
+            <div className={`recent-trend__stat-val recent-trend__stat-val--${trendDir === 'up' ? 'green' : trendDir === 'down' ? 'red' : 'gold'}`}>
+              {Math.round(recentAvg)}%
+            </div>
+            <div className="recent-trend__stat-lbl">
+              {trendDir === 'up' && diff !== null ? `↑ ${diff.toFixed(0)}% vs prior` : trendDir === 'down' && diff !== null ? `↓ ${Math.abs(diff).toFixed(0)}% vs prior` : 'Rolling accuracy'}
+            </div>
+          </div>
+          {recentDrift !== null && (
+            <div className="recent-trend__stat">
+              <div className={`recent-trend__stat-val ${Math.abs(recentDrift) > 0.5 ? 'recent-trend__stat-val--amber' : 'recent-trend__stat-val--green'}`}>
+                {recentDrift >= 0 ? '+' : ''}{recentDrift.toFixed(1)}
+              </div>
+              <div className="recent-trend__stat-lbl">Recent drift</div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AnalyticsTab({ onGoToTraining }) {
+  const [history, setHistory]           = useState([]);
+  const [summaryStats, setSummaryStats] = useState(null);
+
+  useEffect(() => {
+    setHistory(loadDrillHistory());
+    setSummaryStats(loadTrainingStats());
+  }, []);
+
+  if (history.length === 0) {
+    return (
+      <div className="analytics-empty">
+        <div className="analytics-empty__icon"><Activity size={36} /></div>
+        <div className="analytics-empty__title">No drill data yet</div>
+        <div className="analytics-empty__sub">
+          Complete a Running Count Sprint to unlock analytics.
+        </div>
+        <button className="drill-start-btn" onClick={onGoToTraining} type="button">
+          <Zap size={16} />
+          <span>Start Training</span>
+        </button>
+      </div>
+    );
+  }
+
+  const totalDrills   = history.length;
+  const bestAccuracy  = Math.max(...history.map(d => d.accuracy));
+  const avgAccuracy   = Math.round(history.reduce((s, d) => s + d.accuracy, 0) / totalDrills);
+  const avgError      = (history.reduce((s, d) => s + d.error, 0) / totalDrills).toFixed(1);
+  const fastestMs     = Math.min(...history.map(d => d.elapsedMs));
+  const totalCards    = history.reduce((s, d) => s + d.cardCount, 0);
+  const currentStreak = summaryStats?.currentStreak ?? 0;
+  const bestStreak    = summaryStats?.bestStreak ?? 0;
+
+  const recentForChart  = history.slice(0, 20).reverse();
+  const accuracyPoints  = recentForChart.map(d => d.accuracy);
+  const errorPoints     = recentForChart.map(d => d.error);
+
+  const insights     = computeInsights(history);
+  const matrix       = computePerformanceMatrix(history);
+  const drift        = computeDriftAnalysis(history);
+  const consistency  = computeConsistencyScore(history);
+
+  return (
+    <div className="analytics-wrap">
+      <div className="analytics-hd">
+        <div className="analytics-hd__eyebrow">Performance Dashboard</div>
+        <div className="analytics-hd__title">Training Analytics</div>
+        <div className="analytics-hd__sub">
+          {totalDrills} {totalDrills === 1 ? 'drill' : 'drills'} completed &middot;{' '}
+          {totalCards.toLocaleString()} cards tracked
+        </div>
+      </div>
+
+      <div className="analytics-metrics-grid">
+        <AnalyticsMetric label="Drills Completed" value={totalDrills} />
+        <AnalyticsMetric
+          label="Best Accuracy"
+          value={`${bestAccuracy}%`}
+          tone={bestAccuracy === 100 ? 'green' : bestAccuracy >= 80 ? 'gold' : 'default'}
+        />
+        <AnalyticsMetric
+          label="Avg Accuracy"
+          value={`${avgAccuracy}%`}
+          tone={avgAccuracy >= 80 ? 'green' : avgAccuracy >= 60 ? 'gold' : 'red'}
+        />
+        <AnalyticsMetric
+          label="Current Streak"
+          value={currentStreak}
+          suffix=" ✓"
+          tone={currentStreak > 0 ? 'green' : 'default'}
+        />
+        <AnalyticsMetric label="Best Streak" value={bestStreak} suffix=" ✓" />
+        <AnalyticsMetric
+          label="Avg Error"
+          value={`±${avgError}`}
+          tone={parseFloat(avgError) <= 1 ? 'green' : parseFloat(avgError) <= 3 ? 'gold' : 'red'}
+        />
+        <AnalyticsMetric
+          label="Fastest Time"
+          value={fastestMs > 0 ? `${(fastestMs / 1000).toFixed(1)}s` : '—'}
+        />
+        <AnalyticsMetric label="Total Cards" value={totalCards.toLocaleString()} />
+      </div>
+
+      <div className="analytics-intel-row">
+        <PerformanceMatrix matrix={matrix} />
+        <div className="analytics-intel-side">
+          <ConsistencyPanel consistency={consistency} />
+          <DriftPanel drift={drift} />
+        </div>
+      </div>
+
+      <RecentTrendRow history={history} />
+
+      {accuracyPoints.length >= 2 && (
+        <PerformanceTrend
+          accuracyPoints={accuracyPoints}
+          errorPoints={errorPoints}
+          count={recentForChart.length}
+        />
+      )}
+
+      <InsightSection insights={insights} />
+
+      <DrillHistoryTable history={history.slice(0, 20)} />
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -1945,7 +2599,13 @@ function App() {
         </main>
       )}
 
-      {activeTab !== 'live' && activeTab !== 'training' && (
+      {activeTab === 'analytics' && (
+        <main className="grid grid--single">
+          <AnalyticsTab onGoToTraining={() => setActiveTab('training')} />
+        </main>
+      )}
+
+      {activeTab !== 'live' && activeTab !== 'training' && activeTab !== 'analytics' && (
         <main className="grid grid--single">
           <LockedTab tabId={activeTab} onUpgrade={() => setShowPro(true)} />
         </main>
