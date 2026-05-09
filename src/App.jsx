@@ -76,6 +76,29 @@ function playSound(type) {
       g.gain.setValueAtTime(0.018, now);
       g.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
       o.start(now); o.stop(now + 0.055);
+    } else if (type === 'complete') {
+      o.type = 'sine';
+      o.frequency.setValueAtTime(660, now);
+      o.frequency.linearRampToValueAtTime(880, now + 0.14);
+      g.gain.setValueAtTime(0.042, now);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+      o.start(now); o.stop(now + 0.28);
+    } else if (type === 'perfect') {
+      o.type = 'sine';
+      o.frequency.setValueAtTime(880, now);
+      o.frequency.setValueAtTime(1100, now + 0.14);
+      g.gain.setValueAtTime(0.038, now);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+      o.start(now); o.stop(now + 0.40);
+      const o2 = ac.createOscillator();
+      const g2 = ac.createGain();
+      o2.connect(g2); g2.connect(ac.destination);
+      o2.type = 'sine';
+      o2.frequency.value = 1320;
+      g2.gain.setValueAtTime(0, now);
+      g2.gain.setValueAtTime(0.022, now + 0.12);
+      g2.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
+      o2.start(now + 0.12); o2.stop(now + 0.43);
     }
   } catch (e) {}
 }
@@ -182,7 +205,7 @@ function HeroCount({ runningCount, trueCount, decksRemaining, totalCards, prevRC
           big
           value={trueCount.toFixed(2)}
           accent={trueCount >= 2 ? 'green' : trueCount <= -2 ? 'red' : 'gold'}
-          sub={trueCount >= 0 ? 'above baseline' : 'below baseline'}
+          sub={trueCount > 0 ? 'above baseline' : trueCount < 0 ? 'below baseline' : 'at baseline'}
         />
       </div>
 
@@ -650,11 +673,11 @@ function SettingsPanel({ decks, onDeckChange, soundEnabled, setSoundEnabled }) {
 function ProToolsPanel({ onUpgrade }) {
   const features = [
     'Saved session history',
-    'Advanced analytics',
-    'Training drills',
-    'Data export',
+    'Session export (CSV / PDF)',
     'Stealth mode',
     'Cloud sync',
+    'EV deviation charts',
+    'Cross-device access',
   ];
   return (
     <Panel tone="pro" className="pro-panel">
@@ -1329,6 +1352,27 @@ function computeInsights(history) {
     }
   }
 
+  // Rhythm Shift vs Standard comparison
+  const rhythmDrills   = history.filter(d => d.trainingMode === 'rhythm');
+  const standardDrills = history.filter(d => !d.trainingMode || d.trainingMode === 'standard');
+  if (rhythmDrills.length >= 3 && standardDrills.length >= 3 && insights.length < 4) {
+    const rAvg = rhythmDrills.reduce((s, d) => s + d.accuracy, 0) / rhythmDrills.length;
+    const sAvg = standardDrills.reduce((s, d) => s + d.accuracy, 0) / standardDrills.length;
+    const gap  = Math.round(sAvg - rAvg);
+    if (gap >= 10) {
+      insights.push({ text: `Rhythm pressure reduces accuracy by ${gap}% — focus on burst recovery and tempo stabilization.`, tone: 'amber' });
+    } else if (gap >= 4) {
+      insights.push({ text: `Slight accuracy drop (${gap}%) under Rhythm Shift — tempo adaptability is improving.`, tone: 'amber' });
+    } else if (gap >= 0) {
+      insights.push({ text: `Strong adaptability under tempo variation — Rhythm Shift has minimal accuracy impact.`, tone: 'green' });
+    } else {
+      insights.push({ text: `Rhythm pressure sharpens focus — accuracy ${Math.abs(gap)}% higher in Rhythm Shift than Standard.`, tone: 'green' });
+    }
+  } else if (rhythmDrills.length >= 3 && insights.length < 4) {
+    const rAvg = Math.round(rhythmDrills.reduce((s, d) => s + d.accuracy, 0) / rhythmDrills.length);
+    insights.push({ text: `Rhythm Shift average accuracy: ${rAvg}%. Complete more Standard drills to unlock a direct comparison.`, tone: 'muted' });
+  }
+
   if (insights.length === 0) {
     insights.push({ text: 'Keep drilling across different settings to unlock personalized insights.', tone: 'muted' });
   }
@@ -1407,6 +1451,61 @@ const DRILL_SPEEDS = [
 ];
 const DRILL_COUNTS = [20, 40, 60];
 
+const RHYTHM_CONFIGS = {
+  slow: {
+    base: 2200, burst: 980, pause: 3400,
+    patterns: [
+      { type: 'slow',   len: 4 },
+      { type: 'normal', len: 3 },
+      { type: 'burst',  len: 3 },
+      { type: 'pause',  len: 1 },
+    ],
+  },
+  medium: {
+    base: 1200, burst: 500, pause: 2000,
+    patterns: [
+      { type: 'slow',   len: 3 },
+      { type: 'normal', len: 3 },
+      { type: 'burst',  len: 4 },
+      { type: 'pause',  len: 1 },
+    ],
+  },
+  fast: {
+    base: 600, burst: 260, pause: 1100,
+    patterns: [
+      { type: 'normal', len: 2 },
+      { type: 'burst',  len: 5 },
+      { type: 'normal', len: 2 },
+      { type: 'pause',  len: 1 },
+    ],
+  },
+};
+
+function buildRhythmSequence(cardCount, speedId) {
+  const cfg = RHYTHM_CONFIGS[speedId] || RHYTHM_CONFIGS.medium;
+  const intervals = [];
+  let patternIdx = 0;
+  let phasePos   = 0;
+  for (let i = 0; i < cardCount; i++) {
+    const pattern = cfg.patterns[patternIdx % cfg.patterns.length];
+    const jitter  = 0.88 + Math.random() * 0.24;
+    let ms;
+    switch (pattern.type) {
+      case 'burst': ms = Math.round(cfg.burst * jitter); break;
+      case 'pause': ms = Math.round(cfg.pause * jitter); break;
+      case 'slow':  ms = Math.round(cfg.base * 1.35 * jitter); break;
+      default:      ms = Math.round(cfg.base * jitter); break;
+    }
+    intervals.push({ ms, phase: pattern.type });
+    phasePos++;
+    if (phasePos >= pattern.len) {
+      phasePos   = 0;
+      patternIdx++;
+    }
+  }
+  return intervals;
+}
+
 // ---------------------------------------------------------------------------
 // Training — card chip (large, display-only)
 // ---------------------------------------------------------------------------
@@ -1438,9 +1537,10 @@ function DrillStatTile({ label, value, suffix, tone }) {
 }
 
 function DrillSetup({ stats, onStart }) {
-  const [speed, setSpeed]         = useState('medium');
-  const [deckCount, setDeckCount] = useState(6);
-  const [cardCount, setCardCount] = useState(20);
+  const [speed, setSpeed]               = useState('medium');
+  const [deckCount, setDeckCount]       = useState(6);
+  const [cardCount, setCardCount]       = useState(20);
+  const [trainingMode, setTrainingMode] = useState('standard');
 
   return (
     <div className="drill-setup">
@@ -1465,6 +1565,33 @@ function DrillSetup({ stats, onStart }) {
       )}
 
       <div className="drill-config">
+        <div className="drill-config__group">
+          <div className="drill-config__label">Training Mode</div>
+          <div className="drill-config__opts">
+            <button
+              type="button"
+              className={`drill-opt-btn ${trainingMode === 'standard' ? 'drill-opt-btn--on' : ''}`}
+              onClick={() => setTrainingMode('standard')}
+            >
+              <span className="drill-opt-btn__lbl">Standard</span>
+              <span className="drill-opt-btn__sub">Fixed tempo</span>
+            </button>
+            <button
+              type="button"
+              className={`drill-opt-btn ${trainingMode === 'rhythm' ? 'drill-opt-btn--on drill-opt-btn--rhythm-on' : ''}`}
+              onClick={() => setTrainingMode('rhythm')}
+            >
+              <span className="drill-opt-btn__lbl">Rhythm Shift</span>
+              <span className="drill-opt-btn__sub">Variable tempo</span>
+            </button>
+          </div>
+          {trainingMode === 'rhythm' && (
+            <div className="drill-rhythm-hint">
+              Tempo varies — bursts, pauses, and surges. Maintain your count through unpredictable pacing.
+            </div>
+          )}
+        </div>
+
         <div className="drill-config__group">
           <div className="drill-config__label">Speed</div>
           <div className="drill-config__opts">
@@ -1519,7 +1646,7 @@ function DrillSetup({ stats, onStart }) {
 
       <button
         className="drill-start-btn"
-        onClick={() => onStart({ speed, deckCount, cardCount })}
+        onClick={() => onStart({ speed, deckCount, cardCount, trainingMode })}
         type="button"
       >
         <Zap size={16} />
@@ -1532,16 +1659,17 @@ function DrillSetup({ stats, onStart }) {
 // ---------------------------------------------------------------------------
 // Training — running drill
 // ---------------------------------------------------------------------------
-function DrillRunner({ cards, currentIdx }) {
+const RHYTHM_PHASE_LABELS = { burst: 'Burst', pause: 'Pause', slow: 'Slow', normal: '' };
+
+function DrillRunner({ cards, currentIdx, isRhythm, rhythmPhase }) {
   if (!cards.length) return null;
   const card = cards[currentIdx];
   const progress = ((currentIdx + 1) / cards.length) * 100;
+  const phaseClass = isRhythm && rhythmPhase ? ` drill-runner--${rhythmPhase}` : '';
+  const phaseLabel = RHYTHM_PHASE_LABELS[rhythmPhase] || '';
   return (
-    <div className="drill-runner">
-      <div className="drill-runner__badge">
-        <span className="drill-runner__badge-dot" aria-hidden />
-        Counting in progress — do not show count
-      </div>
+    <div className={`drill-runner${phaseClass}`}>
+      <div className="drill-runner__live-dot" aria-hidden />
 
       <div className="drill-runner__stage">
         <div key={currentIdx} className="drill-runner__card-wrap">
@@ -1555,8 +1683,17 @@ function DrillRunner({ cards, currentIdx }) {
           <span className="drill-runner__counter-sep">/</span>
           <span className="drill-runner__counter-total">{cards.length}</span>
         </div>
+        {isRhythm && (
+          <div className={`drill-rhythm-indicator drill-rhythm-indicator--${rhythmPhase || 'normal'}`} aria-hidden>
+            <span className="drill-rhythm-indicator__pip" />
+            {phaseLabel && <span className="drill-rhythm-indicator__label">{phaseLabel}</span>}
+          </div>
+        )}
         <div className="drill-runner__pbar">
-          <div className="drill-runner__pfill" style={{ width: `${progress}%` }} />
+          <div
+            className={`drill-runner__pfill${isRhythm && rhythmPhase === 'burst' ? ' drill-runner__pfill--burst' : ''}`}
+            style={{ width: `${progress}%` }}
+          />
         </div>
       </div>
     </div>
@@ -1593,7 +1730,7 @@ function DrillInputPhase({ cardCount, onSubmit }) {
         {cardCount} cards dealt
       </div>
       <div className="drill-inputphase__prompt">What was the final running count?</div>
-      <div className="drill-inputphase__sub">Hi-Lo system · enter the integer value</div>
+      <div className="drill-inputphase__sub">Hi-Lo system · enter the integer value · press Enter to submit</div>
       <div className="drill-inputphase__field-row">
         <button className="drill-stepper" onClick={() => adjust(-1)} type="button">−</button>
         <input
@@ -1634,7 +1771,7 @@ function DrillResultMetric({ label, value, accent }) {
 }
 
 function DrillResult({ result, onRetry, onReset }) {
-  const { answer, correctCount, accuracy, isExact, elapsedMs, cardCount, deckCount } = result;
+  const { answer, correctCount, accuracy, isExact, elapsedMs, cardCount, deckCount, trainingMode } = result;
   const secs = (elapsedMs / 1000).toFixed(1);
   const absDiff = Math.abs(answer - correctCount);
 
@@ -1658,6 +1795,9 @@ function DrillResult({ result, onRetry, onReset }) {
         </div>
         <div className="drill-result__hero-label">{isExact ? 'Perfect Count!' : `Off by ${absDiff}`}</div>
         <div className="drill-result__explanation">{explanation}</div>
+        {trainingMode === 'rhythm' && (
+          <div className="drill-result__rhythm-tag">Rhythm Shift</div>
+        )}
       </div>
 
       <div className="drill-count-summary">
@@ -1715,19 +1855,33 @@ function DrillResult({ result, onRetry, onReset }) {
 }
 
 // ---------------------------------------------------------------------------
+// Training — brief evaluating state between submit and result
+// ---------------------------------------------------------------------------
+function DrillEvaluating() {
+  return (
+    <div className="drill-evaluating">
+      <div className="drill-evaluating__ring" />
+      <div className="drill-evaluating__label">Evaluating count…</div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Training — main tab
 // ---------------------------------------------------------------------------
 function TrainingTab({ soundEnabled }) {
-  const [phase, setPhase]           = useState('setup');
-  const [config, setConfig]         = useState(null);
-  const [drillCards, setDrillCards] = useState([]);
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const [startTime, setStartTime]   = useState(0);
-  const [elapsedMs, setElapsedMs]   = useState(0);
-  const [result, setResult]         = useState(null);
-  const [stats, setStats]           = useState(loadTrainingStats);
+  const [phase, setPhase]                     = useState('setup');
+  const [config, setConfig]                   = useState(null);
+  const [drillCards, setDrillCards]           = useState([]);
+  const [currentIdx, setCurrentIdx]           = useState(0);
+  const [startTime, setStartTime]             = useState(0);
+  const [elapsedMs, setElapsedMs]             = useState(0);
+  const [result, setResult]                   = useState(null);
+  const [stats, setStats]                     = useState(loadTrainingStats);
+  const [rhythmIntervals, setRhythmIntervals] = useState([]);
   const soundRef = useRef(soundEnabled);
   useEffect(() => { soundRef.current = soundEnabled; }, [soundEnabled]);
+  const evalTimerRef = useRef(null);
 
   const correctCount = useMemo(
     () => drillCards.reduce((s, c) => s + c.delta, 0),
@@ -1735,6 +1889,7 @@ function TrainingTab({ soundEnabled }) {
   );
 
   const handleStart = useCallback((cfg) => {
+    if (evalTimerRef.current) clearTimeout(evalTimerRef.current);
     const shoe = buildShoe(cfg.deckCount);
     const cards = shoe.slice(0, cfg.cardCount);
     setConfig(cfg);
@@ -1743,6 +1898,9 @@ function TrainingTab({ soundEnabled }) {
     setStartTime(Date.now());
     setElapsedMs(0);
     setResult(null);
+    setRhythmIntervals(
+      cfg.trainingMode === 'rhythm' ? buildRhythmSequence(cfg.cardCount, cfg.speed) : []
+    );
     setPhase('running');
   }, []);
 
@@ -1755,7 +1913,10 @@ function TrainingTab({ soundEnabled }) {
   // Auto-advance cards
   useEffect(() => {
     if (phase !== 'running' || !config) return;
-    const ms = DRILL_SPEEDS.find(s => s.id === config.speed)?.ms ?? 1200;
+    const isRhythm = config.trainingMode === 'rhythm' && rhythmIntervals.length > 0;
+    const ms = isRhythm
+      ? (rhythmIntervals[currentIdx]?.ms ?? 1200)
+      : (DRILL_SPEEDS.find(s => s.id === config.speed)?.ms ?? 1200);
     const timer = setTimeout(() => {
       const next = currentIdx + 1;
       if (next >= drillCards.length) {
@@ -1766,7 +1927,7 @@ function TrainingTab({ soundEnabled }) {
       }
     }, ms);
     return () => clearTimeout(timer);
-  }, [phase, currentIdx, config, drillCards.length, startTime]);
+  }, [phase, currentIdx, config, drillCards.length, startTime, rhythmIntervals]);
 
   const handleSubmit = useCallback((raw) => {
     const answer = parseInt(raw, 10);
@@ -1799,10 +1960,16 @@ function TrainingTab({ soundEnabled }) {
       accuracy,
       elapsedMs,
       isExact,
+      trainingMode: config.trainingMode || 'standard',
     });
 
-    setResult({ answer, correctCount, accuracy, isExact, elapsedMs, cardCount: drillCards.length, deckCount: config.deckCount });
-    setPhase('result');
+    setResult({ answer, correctCount, accuracy, isExact, elapsedMs, cardCount: drillCards.length, deckCount: config.deckCount, trainingMode: config.trainingMode || 'standard' });
+    setPhase('evaluating');
+    if (evalTimerRef.current) clearTimeout(evalTimerRef.current);
+    evalTimerRef.current = setTimeout(() => {
+      setPhase('result');
+      if (soundRef.current) playSound(isExact ? 'perfect' : 'complete');
+    }, 820);
   }, [correctCount, elapsedMs, drillCards.length]);
 
   if (phase === 'setup') {
@@ -1814,9 +1981,16 @@ function TrainingTab({ soundEnabled }) {
   }
 
   if (phase === 'running') {
+    const isRhythm    = config?.trainingMode === 'rhythm';
+    const rhythmPhase = isRhythm ? rhythmIntervals[currentIdx]?.phase : undefined;
     return (
       <div className="training-wrap training-wrap--running">
-        <DrillRunner cards={drillCards} currentIdx={currentIdx} />
+        <DrillRunner
+          cards={drillCards}
+          currentIdx={currentIdx}
+          isRhythm={isRhythm}
+          rhythmPhase={rhythmPhase}
+        />
       </div>
     );
   }
@@ -1825,6 +1999,14 @@ function TrainingTab({ soundEnabled }) {
     return (
       <div className="training-wrap">
         <DrillInputPhase cardCount={drillCards.length} onSubmit={handleSubmit} />
+      </div>
+    );
+  }
+
+  if (phase === 'evaluating') {
+    return (
+      <div className="training-wrap">
+        <DrillEvaluating />
       </div>
     );
   }
@@ -1960,6 +2142,7 @@ function DrillHistoryTable({ history }) {
                   <td className="an-hist__date">{fmtDate(d.date)}</td>
                   <td className="an-hist__speed">
                     {d.speed ? d.speed.charAt(0).toUpperCase() + d.speed.slice(1) : '—'}
+                    {d.trainingMode === 'rhythm' && <span className="an-hist__rhythm-tag"> R</span>}
                   </td>
                   <td>{d.deckCount}</td>
                   <td>{d.cardCount}</td>
@@ -2182,6 +2365,77 @@ function RecentTrendRow({ history }) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Analytics — Rhythm Shift Comparison
+// ---------------------------------------------------------------------------
+function RhythmComparisonPanel({ history }) {
+  const standard = history.filter(d => !d.trainingMode || d.trainingMode === 'standard');
+  const rhythm   = history.filter(d => d.trainingMode === 'rhythm');
+  if (rhythm.length < 3) return null;
+
+  const rAvg   = Math.round(rhythm.reduce((s, d) => s + d.accuracy, 0) / rhythm.length);
+  const stdAvg = standard.length >= 2
+    ? Math.round(standard.reduce((s, d) => s + d.accuracy, 0) / standard.length)
+    : null;
+  const gap = stdAvg !== null ? stdAvg - rAvg : null;
+
+  const gapTone = gap === null ? 'default'
+    : gap >= 10 ? 'red'
+    : gap >= 4  ? 'gold'
+    : 'green';
+
+  const gapBadge = gap === null ? 'Active'
+    : gap >= 10 ? 'Challenging'
+    : gap >= 4  ? 'Adapting'
+    : 'Mastered';
+
+  const insight = gap === null
+    ? `${rAvg}% avg accuracy across ${rhythm.length} Rhythm Shift drills.`
+    : gap >= 10
+      ? `Rhythm pressure reduces accuracy by ${gap}%. Focus on burst recovery and rhythm stabilization.`
+      : gap >= 4
+        ? `Slight accuracy drop (${gap}%) under tempo variation — adaptability is improving.`
+        : gap >= 0
+          ? `Minimal impact from tempo variation — strong rhythm adaptability.`
+          : `Rhythm pressure sharpens focus — accuracy ${Math.abs(gap)}% above Standard.`;
+
+  return (
+    <div className="rhythm-compare panel">
+      <div className="panel__title-row">
+        <div>
+          <div className="panel__title">Rhythm Shift</div>
+          <div className="panel__sub">{rhythm.length} rhythm drills completed</div>
+        </div>
+        <div className={`rhythm-compare__badge rhythm-compare__badge--${gapTone}`}>{gapBadge}</div>
+      </div>
+      <div className="rhythm-compare__cols">
+        {stdAvg !== null && (
+          <div className="rhythm-compare__col">
+            <div className="rhythm-compare__col-label">Standard</div>
+            <div className="rhythm-compare__col-val">{stdAvg}%</div>
+            <div className="rhythm-compare__col-sub">{standard.length} drills</div>
+          </div>
+        )}
+        <div className="rhythm-compare__col">
+          <div className="rhythm-compare__col-label">Rhythm Shift</div>
+          <div className="rhythm-compare__col-val rhythm-compare__col-val--rhythm">{rAvg}%</div>
+          <div className="rhythm-compare__col-sub">{rhythm.length} drills</div>
+        </div>
+        {gap !== null && (
+          <div className="rhythm-compare__col">
+            <div className="rhythm-compare__col-label">Gap</div>
+            <div className={`rhythm-compare__col-val rhythm-compare__col-val--${gapTone}`}>
+              {gap > 0 ? `−${gap}%` : gap < 0 ? `+${Math.abs(gap)}%` : '±0%'}
+            </div>
+            <div className="rhythm-compare__col-sub">accuracy delta</div>
+          </div>
+        )}
+      </div>
+      <div className="rhythm-compare__insight">{insight}</div>
+    </div>
+  );
+}
+
 function AnalyticsTab({ onGoToTraining }) {
   const [history, setHistory]           = useState([]);
   const [summaryStats, setSummaryStats] = useState(null);
@@ -2284,6 +2538,8 @@ function AnalyticsTab({ onGoToTraining }) {
           count={recentForChart.length}
         />
       )}
+
+      <RhythmComparisonPanel history={history} />
 
       <InsightSection insights={insights} />
 
