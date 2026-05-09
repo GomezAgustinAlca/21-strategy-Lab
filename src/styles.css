@@ -2902,6 +2902,53 @@ kbd {
 .drill-chip--mid  .drill-chip__cat { color: var(--gold-2); }
 .drill-chip--high .drill-chip__cat { color: var(--red-2); }
 
+/* ── Practice (subtle) mode ── */
+/* Rank neutral, glow off. A thin right-edge accent bar is the sole categorical cue —
+   peripheral and subconscious, invisible unless you know to look. */
+.drill-chip--subtle .drill-chip__glow  { opacity: 0; }
+.drill-chip--subtle .drill-chip__rank  { color: var(--text); }
+.drill-chip--subtle.drill-chip--low  {
+  border-color: rgba(16, 185, 129, 0.08);
+  box-shadow: 0 20px 56px rgba(0,0,0,0.5);
+}
+.drill-chip--subtle.drill-chip--high {
+  border-color: rgba(244, 63, 94, 0.08);
+  box-shadow: 0 20px 56px rgba(0,0,0,0.5);
+}
+.drill-chip--subtle.drill-chip--mid  { border-color: rgba(79, 168, 204, 0.06); }
+.drill-chip--subtle::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 32px;
+  border-radius: 1px 0 0 1px;
+  z-index: 1;
+}
+.drill-chip--subtle.drill-chip--low::after  { background: rgba(16, 185, 129, 0.38); }
+.drill-chip--subtle.drill-chip--high::after { background: rgba(244, 63, 94, 0.38); }
+.drill-chip--subtle.drill-chip--mid::after  { background: rgba(79, 168, 204, 0.24); }
+
+/* ── Realistic (neutral) mode ── */
+.drill-chip--neutral { border-color: rgba(255,255,255,0.10); }
+.drill-chip--neutral .drill-chip__rank { color: var(--text); }
+
+/* ── Analytics assist-level tags ── */
+.an-hist__assist-tag {
+  display: inline-block;
+  margin-left: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+  vertical-align: middle;
+  letter-spacing: 0.04em;
+}
+.an-hist__assist-tag--practice  { color: #fbbf24; background: rgba(251,191,36,0.12); }
+.an-hist__assist-tag--realistic { color: #94a3b8; background: rgba(148,163,184,0.12); }
+
 .drill-runner__footer {
   width: 100%;
   max-width: 380px;

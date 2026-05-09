@@ -17,6 +17,7 @@ const DECK_OPTIONS = [1, 2, 6, 8];
 const STORAGE_KEY = 'strategy-lab-session-v4';
 const TRAINING_STORAGE_KEY = 'strategy-lab-training-v1';
 const DRILL_HISTORY_KEY    = 'strategy-lab-drill-history-v1';
+const ASSIST_LEVEL_KEY     = 'strategy-lab-assist-level-v1';
 
 // ---------------------------------------------------------------------------
 // Audio
@@ -1509,15 +1510,29 @@ function buildRhythmSequence(cardCount, speedId) {
 // ---------------------------------------------------------------------------
 // Training — card chip (large, display-only)
 // ---------------------------------------------------------------------------
-function DrillChip({ rank, delta }) {
+function DrillChip({ rank, delta, assistLevel = 'learning' }) {
   const tone = delta === 1 ? 'low' : delta === -1 ? 'high' : 'mid';
+  const isNeutral = assistLevel === 'realistic';
+  const isSubtle  = assistLevel === 'practice';
+  const showCat   = assistLevel === 'learning';
+
+  let chipClass = 'drill-chip';
+  if (isNeutral) {
+    chipClass += ' drill-chip--neutral';
+  } else {
+    chipClass += ` drill-chip--${tone}`;
+    if (isSubtle) chipClass += ' drill-chip--subtle';
+  }
+
   return (
-    <div className={`drill-chip drill-chip--${tone}`}>
+    <div className={chipClass}>
       <div className="drill-chip__glow" aria-hidden />
       <div className="drill-chip__rank">{rank}</div>
-      <div className={`drill-chip__cat drill-chip__cat--${tone}`}>
-        {delta === 1 ? '2 – 6' : delta === -1 ? '10 – A' : '7 – 9'}
-      </div>
+      {showCat && (
+        <div className={`drill-chip__cat drill-chip__cat--${tone}`}>
+          {delta === 1 ? '2 – 6' : delta === -1 ? '10 – A' : '7 – 9'}
+        </div>
+      )}
     </div>
   );
 }
@@ -1541,6 +1556,14 @@ function DrillSetup({ stats, onStart }) {
   const [deckCount, setDeckCount]       = useState(6);
   const [cardCount, setCardCount]       = useState(20);
   const [trainingMode, setTrainingMode] = useState('standard');
+  const [assistLevel, setAssistLevel]   = useState(() => {
+    try { return localStorage.getItem(ASSIST_LEVEL_KEY) || 'learning'; } catch { return 'learning'; }
+  });
+
+  const handleAssistLevel = (level) => {
+    setAssistLevel(level);
+    try { localStorage.setItem(ASSIST_LEVEL_KEY, level); } catch {}
+  };
 
   return (
     <div className="drill-setup">
@@ -1642,11 +1665,41 @@ function DrillSetup({ stats, onStart }) {
             ))}
           </div>
         </div>
+
+        <div className="drill-config__group">
+          <div className="drill-config__label">Assist Level</div>
+          <div className="drill-config__opts">
+            <button
+              type="button"
+              className={`drill-opt-btn ${assistLevel === 'learning' ? 'drill-opt-btn--on' : ''}`}
+              onClick={() => handleAssistLevel('learning')}
+            >
+              <span className="drill-opt-btn__lbl">Learning</span>
+              <span className="drill-opt-btn__sub">Color + hints</span>
+            </button>
+            <button
+              type="button"
+              className={`drill-opt-btn ${assistLevel === 'practice' ? 'drill-opt-btn--on' : ''}`}
+              onClick={() => handleAssistLevel('practice')}
+            >
+              <span className="drill-opt-btn__lbl">Practice</span>
+              <span className="drill-opt-btn__sub">Subtle color</span>
+            </button>
+            <button
+              type="button"
+              className={`drill-opt-btn ${assistLevel === 'realistic' ? 'drill-opt-btn--on' : ''}`}
+              onClick={() => handleAssistLevel('realistic')}
+            >
+              <span className="drill-opt-btn__lbl">Realistic</span>
+              <span className="drill-opt-btn__sub">No cues</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <button
         className="drill-start-btn"
-        onClick={() => onStart({ speed, deckCount, cardCount, trainingMode })}
+        onClick={() => onStart({ speed, deckCount, cardCount, trainingMode, assistLevel })}
         type="button"
       >
         <Zap size={16} />
@@ -1661,7 +1714,7 @@ function DrillSetup({ stats, onStart }) {
 // ---------------------------------------------------------------------------
 const RHYTHM_PHASE_LABELS = { burst: 'Burst', pause: 'Pause', slow: 'Slow', normal: '' };
 
-function DrillRunner({ cards, currentIdx, isRhythm, rhythmPhase }) {
+function DrillRunner({ cards, currentIdx, isRhythm, rhythmPhase, assistLevel = 'learning' }) {
   if (!cards.length) return null;
   const card = cards[currentIdx];
   const progress = ((currentIdx + 1) / cards.length) * 100;
@@ -1673,7 +1726,7 @@ function DrillRunner({ cards, currentIdx, isRhythm, rhythmPhase }) {
 
       <div className="drill-runner__stage">
         <div key={currentIdx} className="drill-runner__card-wrap">
-          <DrillChip rank={card.rank} delta={card.delta} />
+          <DrillChip rank={card.rank} delta={card.delta} assistLevel={assistLevel} />
         </div>
       </div>
 
@@ -1961,6 +2014,7 @@ function TrainingTab({ soundEnabled }) {
       elapsedMs,
       isExact,
       trainingMode: config.trainingMode || 'standard',
+      assistLevel:  config.assistLevel  || 'learning',
     });
 
     setResult({ answer, correctCount, accuracy, isExact, elapsedMs, cardCount: drillCards.length, deckCount: config.deckCount, trainingMode: config.trainingMode || 'standard' });
@@ -1990,6 +2044,7 @@ function TrainingTab({ soundEnabled }) {
           currentIdx={currentIdx}
           isRhythm={isRhythm}
           rhythmPhase={rhythmPhase}
+          assistLevel={config?.assistLevel || 'learning'}
         />
       </div>
     );
@@ -2143,6 +2198,8 @@ function DrillHistoryTable({ history }) {
                   <td className="an-hist__speed">
                     {d.speed ? d.speed.charAt(0).toUpperCase() + d.speed.slice(1) : '—'}
                     {d.trainingMode === 'rhythm' && <span className="an-hist__rhythm-tag"> R</span>}
+                    {d.assistLevel === 'practice'  && <span className="an-hist__assist-tag an-hist__assist-tag--practice"> P</span>}
+                    {d.assistLevel === 'realistic' && <span className="an-hist__assist-tag an-hist__assist-tag--realistic"> Re</span>}
                   </td>
                   <td>{d.deckCount}</td>
                   <td>{d.cardCount}</td>
