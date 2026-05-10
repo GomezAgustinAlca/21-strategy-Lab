@@ -1429,6 +1429,126 @@ function computeConsistencyScore(history) {
   return { score, stdDev: stdDev.toFixed(1), label, tone };
 }
 
+function computeTodaysFocus(history) {
+  const savedAssist = (() => {
+    try { return localStorage.getItem(ASSIST_LEVEL_KEY) || 'learning'; } catch { return 'learning'; }
+  })();
+
+  const DEFAULT = {
+    trainingMode: 'standard',
+    speed: 'medium',
+    cardCount: 20,
+    assistLevel: savedAssist,
+    deckCount: 6,
+    focus: 'Practice',
+    reason: 'Build a baseline before increasing pressure.',
+  };
+
+  if (history.length < 3) return DEFAULT;
+
+  // 1. Rhythm vs Standard accuracy gap
+  const rhythmDrills   = history.filter(d => d.trainingMode === 'rhythm');
+  const standardDrills = history.filter(d => !d.trainingMode || d.trainingMode === 'standard');
+  if (rhythmDrills.length >= 3 && standardDrills.length >= 3) {
+    const rAvg = rhythmDrills.reduce((s, d) => s + d.accuracy, 0) / rhythmDrills.length;
+    const sAvg = standardDrills.reduce((s, d) => s + d.accuracy, 0) / standardDrills.length;
+    if (sAvg - rAvg >= 10) {
+      return {
+        trainingMode: 'rhythm',
+        speed: 'medium',
+        cardCount: 40,
+        assistLevel: savedAssist,
+        deckCount: 6,
+        focus: 'Drift Control',
+        reason: 'Your recent drills show accuracy drops under tempo variation.',
+      };
+    }
+  }
+
+  // 2. Speed weakness
+  const bySpeed = {};
+  for (const d of history) {
+    if (!bySpeed[d.speed]) bySpeed[d.speed] = [];
+    bySpeed[d.speed].push(d.accuracy);
+  }
+  const speedAvgs = Object.entries(bySpeed)
+    .filter(([, arr]) => arr.length >= 2)
+    .map(([speed, arr]) => ({ speed, avg: arr.reduce((s, v) => s + v, 0) / arr.length }));
+  if (speedAvgs.length >= 2) {
+    const sorted = [...speedAvgs].sort((a, b) => b.avg - a.avg);
+    const worst  = sorted[sorted.length - 1];
+    const best   = sorted[0];
+    if (best.avg - worst.avg >= 12) {
+      const wLabel = worst.speed.charAt(0).toUpperCase() + worst.speed.slice(1);
+      const bLabel = best.speed.charAt(0).toUpperCase() + best.speed.slice(1);
+      return {
+        trainingMode: 'standard',
+        speed: worst.speed,
+        cardCount: 20,
+        assistLevel: savedAssist,
+        deckCount: 6,
+        focus: `${wLabel} Recovery`,
+        reason: `Accuracy at ${wLabel} (${Math.round(worst.avg)}%) lags ${bLabel} (${Math.round(best.avg)}%). Targeted reps rebuild tracking stability.`,
+      };
+    }
+  }
+
+  // 3. Last drill was strong — suggest progression
+  const last = history[0];
+  if (last) {
+    const speeds = ['slow', 'medium', 'fast'];
+    const sIdx   = speeds.indexOf(last.speed);
+    if (last.accuracy >= 85 && sIdx < speeds.length - 1) {
+      const nextSpeed = speeds[sIdx + 1];
+      const nextLabel = nextSpeed.charAt(0).toUpperCase() + nextSpeed.slice(1);
+      const curLabel  = last.speed.charAt(0).toUpperCase() + last.speed.slice(1);
+      return {
+        trainingMode: 'standard',
+        speed: nextSpeed,
+        cardCount: 20,
+        assistLevel: savedAssist,
+        deckCount: 6,
+        focus: 'Tempo Advancement',
+        reason: `${Math.round(last.accuracy)}% accuracy at ${curLabel} — ready to challenge ${nextLabel}.`,
+      };
+    }
+  }
+
+  // 4. Solid Medium form with no Rhythm exposure yet
+  const medStd = history.filter(d => d.speed === 'medium' && (!d.trainingMode || d.trainingMode === 'standard'));
+  if (medStd.length >= 4 && rhythmDrills.length < 2) {
+    const medAvg = medStd.reduce((s, d) => s + d.accuracy, 0) / medStd.length;
+    if (medAvg >= 78) {
+      return {
+        trainingMode: 'rhythm',
+        speed: 'medium',
+        cardCount: 20,
+        assistLevel: savedAssist,
+        deckCount: 6,
+        focus: 'Rhythm Exposure',
+        reason: 'Solid Medium form. Rhythm Shift will test tempo adaptability.',
+      };
+    }
+  }
+
+  // 5. Strong recent average — increase volume
+  const recent = history.slice(0, 5);
+  const recentAvg = recent.reduce((s, d) => s + d.accuracy, 0) / recent.length;
+  if (recentAvg >= 82) {
+    return {
+      trainingMode: 'standard',
+      speed: 'medium',
+      cardCount: 40,
+      assistLevel: savedAssist,
+      deckCount: 6,
+      focus: 'Volume Load',
+      reason: 'Accuracy is holding strong. More cards per drill builds sustained tracking.',
+    };
+  }
+
+  return DEFAULT;
+}
+
 function buildShoe(decks) {
   const shoe = [];
   for (let d = 0; d < decks; d++) {
@@ -1540,6 +1660,43 @@ function DrillChip({ rank, delta, assistLevel = 'learning' }) {
 // ---------------------------------------------------------------------------
 // Training — setup screen
 // ---------------------------------------------------------------------------
+function TodaysFocusCard({ focus, onStart }) {
+  const modeLabel   = focus.trainingMode === 'rhythm' ? 'Rhythm Shift' : 'Standard';
+  const speedLabel  = focus.speed.charAt(0).toUpperCase() + focus.speed.slice(1);
+  const assistMap   = { learning: 'Learning', practice: 'Practice', realistic: 'Realistic' };
+  const assistLabel = assistMap[focus.assistLevel] || 'Learning';
+
+  return (
+    <div className="focus-card">
+      <div className="focus-card__eyebrow">Today's Focus</div>
+      <div className="focus-card__title">{focus.focus}</div>
+      <div className="focus-card__tags">
+        <span className="focus-card__tag focus-card__tag--mode">{modeLabel}</span>
+        <span className="focus-card__tag">{speedLabel}</span>
+        <span className="focus-card__tag">{focus.cardCount} Cards</span>
+        <span className="focus-card__tag">{assistLabel}</span>
+      </div>
+      <div className="focus-card__reason-row">
+        <span className="focus-card__reason-label">Why</span>
+        <span className="focus-card__reason">{focus.reason}</span>
+      </div>
+      <button
+        type="button"
+        className="focus-card__cta"
+        onClick={() => onStart({
+          speed:        focus.speed,
+          deckCount:    focus.deckCount,
+          cardCount:    focus.cardCount,
+          trainingMode: focus.trainingMode,
+          assistLevel:  focus.assistLevel,
+        })}
+      >
+        Start Today's Focus
+      </button>
+    </div>
+  );
+}
+
 function DrillStatTile({ label, value, suffix, tone }) {
   return (
     <div className={`drill-stat-tile ${tone ? `drill-stat-tile--${tone}` : ''}`}>
@@ -1560,6 +1717,8 @@ function DrillSetup({ stats, onStart }) {
     try { return localStorage.getItem(ASSIST_LEVEL_KEY) || 'learning'; } catch { return 'learning'; }
   });
 
+  const todaysFocus = useMemo(() => computeTodaysFocus(loadDrillHistory()), []);
+
   const handleAssistLevel = (level) => {
     setAssistLevel(level);
     try { localStorage.setItem(ASSIST_LEVEL_KEY, level); } catch {}
@@ -1567,13 +1726,10 @@ function DrillSetup({ stats, onStart }) {
 
   return (
     <div className="drill-setup">
-      <div className="drill-setup__header">
-        <div className="drill-setup__eyebrow">Running Count Sprint</div>
-        <div className="drill-setup__title">Configure Drill</div>
-        <div className="drill-setup__sub">
-          Cards appear automatically one at a time. Track the running count mentally.
-          Submit your answer when the drill ends.
-        </div>
+      <TodaysFocusCard focus={todaysFocus} onStart={onStart} />
+
+      <div className="drill-setup__divider">
+        <span>or configure manually</span>
       </div>
 
       {stats.drillsCompleted > 0 && (
@@ -1823,7 +1979,77 @@ function DrillResultMetric({ label, value, accent }) {
   );
 }
 
-function DrillResult({ result, onRetry, onReset }) {
+// ---------------------------------------------------------------------------
+// Training — post-drill insight and recommendation helpers
+// ---------------------------------------------------------------------------
+function getPostDrillInsight(result, config, recentHistory) {
+  const { accuracy, isExact, answer, correctCount } = result;
+  const absDiff = Math.abs(answer - correctCount);
+  const recent3 = recentHistory.slice(0, 3);
+
+  if (absDiff >= 6) {
+    return config.speed === 'fast'
+      ? 'Fast mode still unstable.'
+      : 'Drift too high — reduce tempo.';
+  }
+  if (isExact) {
+    const recentExacts = recent3.filter(d => d.isExact).length;
+    if (recentExacts >= 2) {
+      return config.speed === 'fast' ? 'Precision locked at Fast.' : 'Ready for higher tempo.';
+    }
+    return config.speed === 'fast' ? 'Perfect count at Fast.' : 'Perfect. Push the pace.';
+  }
+  if (accuracy >= 85) {
+    if (config.speed === 'slow') return 'Stable at Slow — step up to Medium.';
+    if (config.speed === 'medium') return 'Consistent. Fast mode next.';
+    return 'Strong tracking confirmed.';
+  }
+  if (accuracy >= 70) {
+    return absDiff <= 2 ? 'Close. One more at this level.' : 'Drift moderate — hold this tempo.';
+  }
+  if (config.speed === 'fast') return 'Fast mode not ready — drop to Medium.';
+  if (config.speed === 'medium') return 'Slow down to rebuild precision.';
+  return 'Focus on card-by-card discipline.';
+}
+
+function getRecommendedConfig(result, config) {
+  const { accuracy, isExact } = result;
+  const speeds    = ['slow', 'medium', 'fast'];
+  const cardSizes = [20, 40, 60];
+  const sIdx = speeds.indexOf(config.speed);
+  const cIdx = cardSizes.indexOf(config.cardCount);
+
+  if (accuracy >= 90 && isExact) {
+    if (sIdx < speeds.length - 1) return { ...config, speed: speeds[sIdx + 1] };
+    if (cIdx < cardSizes.length - 1) return { ...config, cardCount: cardSizes[cIdx + 1] };
+    return null;
+  }
+  if (accuracy >= 80 && sIdx < speeds.length - 1) {
+    return { ...config, speed: speeds[sIdx + 1] };
+  }
+  if (accuracy < 55 && sIdx > 0) {
+    return { ...config, speed: speeds[sIdx - 1] };
+  }
+  return null;
+}
+
+function getRecommendedLabel(current, recommended) {
+  const speeds = ['slow', 'medium', 'fast'];
+  if (recommended.speed !== current.speed) {
+    const label = recommended.speed.charAt(0).toUpperCase() + recommended.speed.slice(1);
+    return speeds.indexOf(recommended.speed) > speeds.indexOf(current.speed)
+      ? `Try ${label} →`
+      : `← Try ${label}`;
+  }
+  if (recommended.cardCount !== current.cardCount) {
+    return recommended.cardCount > current.cardCount
+      ? `Try ${recommended.cardCount} Cards →`
+      : `← ${recommended.cardCount} Cards`;
+  }
+  return 'Next Drill →';
+}
+
+function DrillResult({ result, config, recentHistory = [], onRetry, onReset, onNextDrill }) {
   const { answer, correctCount, accuracy, isExact, elapsedMs, cardCount, deckCount, trainingMode } = result;
   const secs = (elapsedMs / 1000).toFixed(1);
   const absDiff = Math.abs(answer - correctCount);
@@ -1839,6 +2065,10 @@ function DrillResult({ result, onRetry, onReset }) {
                     'Significant drift — slow down or reduce card count.';
 
   const fmtRC = n => (n >= 0 ? `+${n}` : `${n}`);
+
+  const insight = config ? getPostDrillInsight(result, config, recentHistory) : null;
+  const recommendation = config ? getRecommendedConfig(result, config) : null;
+  const nextLabel = recommendation && config ? getRecommendedLabel(config, recommendation) : null;
 
   return (
     <div className="drill-result">
@@ -1894,13 +2124,22 @@ function DrillResult({ result, onRetry, onReset }) {
         <DrillResultMetric label="Time" value={`${secs}s`} />
       </div>
 
+      {insight && (
+        <div className="drill-result__momentum">{insight}</div>
+      )}
+
       <div className="drill-result__actions">
         <button className="drill-retry-btn" onClick={onRetry} type="button">
           <RefreshCw size={14} />
-          <span>Try Again</span>
+          <span>Retry</span>
         </button>
+        {recommendation && onNextDrill && (
+          <button className="drill-next-btn" onClick={() => onNextDrill(recommendation)} type="button">
+            {nextLabel}
+          </button>
+        )}
         <button className="ghost-btn" onClick={onReset} type="button">
-          Change Settings
+          Settings
         </button>
       </div>
     </div>
@@ -1932,6 +2171,7 @@ function TrainingTab({ soundEnabled }) {
   const [result, setResult]                   = useState(null);
   const [stats, setStats]                     = useState(loadTrainingStats);
   const [rhythmIntervals, setRhythmIntervals] = useState([]);
+  const [recentHistory, setRecentHistory] = useState([]);
   const soundRef = useRef(soundEnabled);
   useEffect(() => { soundRef.current = soundEnabled; }, [soundEnabled]);
   const evalTimerRef = useRef(null);
@@ -2001,6 +2241,7 @@ function TrainingTab({ soundEnabled }) {
       return next;
     });
 
+    const prior = loadDrillHistory().slice(0, 5);
     appendDrillHistory({
       id:           Date.now(),
       date:         new Date().toISOString(),
@@ -2016,6 +2257,7 @@ function TrainingTab({ soundEnabled }) {
       trainingMode: config.trainingMode || 'standard',
       assistLevel:  config.assistLevel  || 'learning',
     });
+    setRecentHistory(prior);
 
     setResult({ answer, correctCount, accuracy, isExact, elapsedMs, cardCount: drillCards.length, deckCount: config.deckCount, trainingMode: config.trainingMode || 'standard' });
     setPhase('evaluating');
@@ -2023,7 +2265,7 @@ function TrainingTab({ soundEnabled }) {
     evalTimerRef.current = setTimeout(() => {
       setPhase('result');
       if (soundRef.current) playSound(isExact ? 'perfect' : 'complete');
-    }, 820);
+    }, 640);
   }, [correctCount, elapsedMs, drillCards.length]);
 
   if (phase === 'setup') {
@@ -2071,8 +2313,11 @@ function TrainingTab({ soundEnabled }) {
       <div className="training-wrap">
         <DrillResult
           result={result}
+          config={config}
+          recentHistory={recentHistory}
           onRetry={() => handleStart(config)}
           onReset={() => setPhase('setup')}
+          onNextDrill={handleStart}
         />
       </div>
     );
