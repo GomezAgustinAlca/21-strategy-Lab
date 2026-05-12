@@ -554,7 +554,7 @@ html { scroll-behavior: smooth; }
 
 .lp-section__head {
   max-width: 640px;
-  margin-bottom: 60px;
+  margin-bottom: 52px;
 }
 
 .lp-section__title {
@@ -580,18 +580,18 @@ html { scroll-behavior: smooth; }
 .lp-tgrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  gap: 14px;
 }
 
 .lp-tcard {
   background: var(--panel-1);
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
-  padding: 26px 22px;
+  padding: 26px 24px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  gap: 11px;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .lp-tcard:hover {
@@ -657,7 +657,7 @@ html { scroll-behavior: smooth; }
 .lp-analytics-layout {
   display: grid;
   grid-template-columns: 1fr 420px;
-  gap: 80px;
+  gap: 64px;
   align-items: start;
 }
 
@@ -674,7 +674,7 @@ html { scroll-behavior: smooth; }
 .lp-insight {
   display: flex;
   gap: 14px;
-  padding: 18px 0;
+  padding: 20px 0;
   border-bottom: 1px solid var(--line-soft);
 }
 
@@ -805,7 +805,7 @@ html { scroll-behavior: smooth; }
 .lp-pstep {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
 .lp-pstep__num {
@@ -814,7 +814,7 @@ html { scroll-behavior: smooth; }
   font-weight: 700;
   color: var(--gold);
   letter-spacing: 0.06em;
-  padding-bottom: 14px;
+  padding-bottom: 16px;
   border-bottom: 1px solid rgba(79, 168, 204, 0.2);
 }
 
@@ -845,7 +845,7 @@ html { scroll-behavior: smooth; }
 .lp-premium-layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 80px;
+  gap: 64px;
   align-items: start;
 }
 
@@ -890,9 +890,9 @@ html { scroll-behavior: smooth; }
 .lp-pf {
   display: flex;
   gap: 12px;
-  padding: 16px 22px;
+  padding: 17px 22px;
   border-bottom: 1px solid var(--line-soft);
-  transition: background 0.15s ease;
+  transition: background 0.16s ease;
 }
 
 .lp-pf:last-child { border-bottom: none; }
@@ -985,7 +985,7 @@ html { scroll-behavior: smooth; }
   .lp-hero__headline { font-size: 4.8rem; }
   .lp-hero__viz      { width: 520px; }
   .lp-viz__count-num { font-size: 4.4rem; }
-  .lp-section        { padding: 120px 100px; }
+  .lp-section        { padding: 112px 100px; }
 }
 
 @media (max-width: 1100px) {
@@ -1063,11 +1063,31 @@ html { scroll-behavior: smooth; }
 
   .lp-viz__count-num { font-size: 2.6rem; }
   .lp-viz__count-num--sm { font-size: 1.8rem; }
+
+  /* Performance: disable heavy continuous animations on mobile */
+  .lp-hero::before { animation: none; opacity: 0.5; }
+  .lp-viz {
+    animation: none;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.55), 0 0 0 1px rgba(79, 168, 204, 0.1);
+    padding: 20px;
+    gap: 18px;
+  }
+
+  /* Remove hover-lift effects (they don't apply on touch and add visual noise) */
+  .lp-tcard:hover { transform: none; box-shadow: none; }
+  .lp-pf:hover { background: transparent; }
 }
 
 @media (max-width: 480px) {
   .lp-nav__btn { font-size: 12px; padding: 6px 12px; }
+  .lp-hero { padding: 72px 16px 44px; }
   .lp-hero__headline { font-size: 2rem; }
+  .lp-hero__actions { gap: 8px; }
+  .lp-section { padding: 52px 16px; }
   .lp-section__title { font-size: 1.75rem; }
   .lp-premium__title { font-size: 1.75rem; }
+  .lp-footer { padding: 28px 16px; }
+
+  /* Full-width CTAs on small screens — easier to tap */
+  .lp-btn { width: 100%; justify-content: center; }
 }

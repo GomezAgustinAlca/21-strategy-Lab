@@ -260,17 +260,17 @@ export default function LandingPage({ onEnter }) {
       {/* ── HERO ────────────────────────────────────────────────────────────── */}
       <section className="lp-hero">
         <div className="lp-hero__content">
-          <Eyebrow color="blue">COGNITIVE PERFORMANCE SYSTEM</Eyebrow>
+          <Eyebrow color="blue">PERFORMANCE TRAINING SYSTEM</Eyebrow>
           <h1 className="lp-hero__headline">
             Train Real-Time<br />Cognitive Precision
           </h1>
           <p className="lp-hero__sub">
-            Adaptive counting drills built for rhythm, focus, and performance under pressure.
+            Counting drills built for rhythm, focus, and precision under real pressure.
           </p>
           <p className="lp-hero__body">
-            Strategy Lab develops the mental discipline behind real-time counting —
-            through rhythm-based input drills, dynamic tempo training, and performance
-            analytics that track exactly where precision breaks down.
+            Strategy Lab builds the mental discipline behind real-time counting —
+            through structured tempo drills, dynamic rhythm training, and analytics
+            that show exactly where accuracy breaks down.
           </p>
           <div className="lp-hero__actions">
             <button className="lp-btn lp-btn--primary" onClick={onEnter}>
@@ -293,10 +293,10 @@ export default function LandingPage({ onEnter }) {
           <FadeIn>
             <Eyebrow color="blue">TRAINING SYSTEM</Eyebrow>
             <h2 className="lp-section__title">
-              Built Around Real Training Principles
+              Built Around How Counting Actually Works
             </h2>
             <p className="lp-section__sub">
-              Four distinct modes targeting different dimensions of counting performance.
+              Four modes targeting different dimensions of real counting performance.
             </p>
           </FadeIn>
         </div>
@@ -307,7 +307,7 @@ export default function LandingPage({ onEnter }) {
             sub="Foundation"
             accent="blue"
             delay={0}
-            description="Controlled pacing. Track every card at a consistent tempo to build baseline accuracy and mechanical precision."
+            description="Consistent tempo. Build baseline accuracy and counting rhythm before introducing variation."
           />
           <TrainingCard
             icon={Activity}
@@ -315,7 +315,7 @@ export default function LandingPage({ onEnter }) {
             sub="Adaptability"
             accent="green"
             delay={80}
-            description="Dynamic tempo variation mid-session. Tests whether accuracy holds when pace changes without warning."
+            description="Tempo changes mid-session without warning. Tests whether accuracy holds through pace disruption."
           />
           <TrainingCard
             icon={Layers}
@@ -323,7 +323,7 @@ export default function LandingPage({ onEnter }) {
             sub="Progressive"
             accent="amber"
             delay={160}
-            description="Start with full guidance, reduce assistance systematically as accuracy improves. Structured confidence building."
+            description="Full guidance at the start. Assistance reduces automatically as accuracy improves — no guesswork."
           />
           <TrainingCard
             icon={Zap}
@@ -331,7 +331,7 @@ export default function LandingPage({ onEnter }) {
             sub="Pressure"
             accent="red"
             delay={240}
-            description="Real counting conditions. Limited time windows, no safety net — pressure that mirrors actual performance demands."
+            description="Tight windows, no assistance. Conditions that reflect actual performance demands — not practice."
           />
         </div>
       </section>
@@ -343,35 +343,35 @@ export default function LandingPage({ onEnter }) {
             <FadeIn>
               <Eyebrow color="green">PERFORMANCE ANALYTICS</Eyebrow>
               <h2 className="lp-section__title">
-                Performance You Can Actually See
+                See Exactly Where Precision Breaks
               </h2>
               <p className="lp-section__sub">
-                Track what matters: where you drift, where you stabilize, and where your tempo breaks.
+                Drift patterns, tempo breaks, and recovery gaps — tracked across every session.
               </p>
             </FadeIn>
             <div className="lp-insights">
               <InsightRow
                 icon={TrendingUp}
-                title="Detect counting drift under pressure"
-                description="Maps running count deviation over session length to identify exactly where accuracy degrades."
+                title="Spot drift under pressure"
+                description="Maps count deviation over session length — showing exactly where accuracy starts to slip."
                 delay={0}
               />
               <InsightRow
                 icon={Activity}
-                title="Track consistency across tempo changes"
-                description="Measures accuracy stability specifically during rhythm shifts — the hardest cognitive test."
+                title="Measure consistency through tempo changes"
+                description="Tracks accuracy stability during rhythm shifts — the most demanding cognitive condition."
                 delay={80}
               />
               <InsightRow
                 icon={RefreshCw}
-                title="Identify weak recovery patterns"
-                description="Flags sequences where accuracy fails to recover after errors — the real performance limiter."
+                title="Find where recovery fails"
+                description="Flags sequences where accuracy doesn't recover after errors — the real performance ceiling."
                 delay={160}
               />
               <InsightRow
                 icon={BarChart2}
-                title="Session-over-session progression"
-                description="Long-term trend tracking shows whether training is building durable skill or just familiarity."
+                title="Track real progression over time"
+                description="Long-term trend data shows whether training is building durable skill or just surface familiarity."
                 delay={240}
               />
             </div>
@@ -388,11 +388,11 @@ export default function LandingPage({ onEnter }) {
           <FadeIn>
             <Eyebrow color="amber">PROGRESSION</Eyebrow>
             <h2 className="lp-section__title">
-              Structured Improvement.<br />Not Random Practice.
+              Structured Progression.<br />Not Random Practice.
             </h2>
             <p className="lp-section__sub">
-              The system adapts to where you are, recommends what to train next,
-              and tracks whether it's working.
+              The system adapts to where you are, surfaces what to work on next,
+              and shows whether it's working.
             </p>
           </FadeIn>
         </div>
@@ -400,25 +400,25 @@ export default function LandingPage({ onEnter }) {
           <ProgressionStep
             number="01"
             title="Baseline Assessment"
-            description="Run a standard session to establish your accuracy baseline and preferred tempo range before anything else."
+            description="A standard session establishes your accuracy baseline and natural tempo range before anything else."
             delay={0}
           />
           <ProgressionStep
             number="02"
-            title="Targeted Drill Selection"
-            description="Analytics surface your specific weak points — drift patterns, recovery gaps, and tempo break zones."
+            title="Drill Selection"
+            description="Analytics surface your specific weak points — drift patterns, recovery gaps, and where tempo breaks down."
             delay={80}
           />
           <ProgressionStep
             number="03"
-            title="Adaptive Assist Training"
-            description="Work through assist levels in your problem zones. Support reduces automatically as accuracy improves."
+            title="Assisted Training"
+            description="Work through assist levels in your weak zones. Support reduces automatically as accuracy improves."
             delay={160}
           />
           <ProgressionStep
             number="04"
             title="Pressure Confirmation"
-            description="Realistic mode confirms the skill is durable under real counting conditions, not just controlled practice."
+            description="Realistic mode confirms the skill holds under actual conditions — not just in controlled practice."
             delay={240}
           />
         </div>
@@ -430,11 +430,11 @@ export default function LandingPage({ onEnter }) {
           <FadeIn className="lp-premium-left">
             <Eyebrow color="blue">STRATEGY LAB PRO</Eyebrow>
             <h2 className="lp-premium__title">
-              Advanced Training.<br />Complete Performance.
+              Advanced Tools.<br />Complete Picture.
             </h2>
             <p className="lp-premium__sub">
-              Deeper analytics, advanced modes, and structured programs
-              for practitioners who need more than the fundamentals.
+              Deeper analytics, advanced training modes, and structured programs
+              for practitioners who are serious about performance.
             </p>
             <button className="lp-btn lp-btn--primary" onClick={onEnter}>
               Start Training Free <ChevronRight size={15} />
@@ -444,28 +444,28 @@ export default function LandingPage({ onEnter }) {
           <FadeIn className="lp-premium-right" delay={80}>
             <div className="lp-premium-features">
               <PremiumFeature
-                title="Complete Performance History"
-                description="Every session tracked and compared — spot long-term drift and genuine progression."
+                title="Full Session History"
+                description="Every session stored and comparable — track long-term drift and genuine progression."
               />
               <PremiumFeature
-                title="Advanced Drift Analysis"
-                description="Session-level comparison showing exactly when and how accuracy degraded."
+                title="Drift Analysis"
+                description="Session-level breakdowns showing exactly when and how accuracy degraded."
               />
               <PremiumFeature
-                title="Configurable Realistic Mode"
-                description="Custom pressure levels, window sizes, and difficulty curves for advanced practitioners."
+                title="Configurable Pressure Mode"
+                description="Custom time windows, pressure levels, and difficulty curves for advanced work."
               />
               <PremiumFeature
                 title="Stealth Interface"
-                description="Minimal, discreet training mode designed for real-environment practice."
+                description="Minimal, discreet mode built for real-environment practice."
               />
               <PremiumFeature
-                title="Structured Training Programs"
-                description="Multi-week progressive programs built around measured skill acquisition."
+                title="Structured Programs"
+                description="Multi-week progressive plans built around measured skill acquisition."
               />
               <PremiumFeature
-                title="Full Data Export"
-                description="Export complete performance data for external analysis and long-term tracking."
+                title="Data Export"
+                description="Export full session data as CSV or PDF for external analysis."
               />
             </div>
           </FadeIn>
@@ -481,7 +481,7 @@ export default function LandingPage({ onEnter }) {
             <div className="lp-footer__sub">Cognitive Performance Training</div>
           </div>
         </div>
-        <div className="lp-footer__copy">© 2025 Strategy Lab — Built for precision training.</div>
+        <div className="lp-footer__copy">© 2025 Strategy Lab</div>
       </footer>
 
     </div>

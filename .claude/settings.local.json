@@ -3,7 +3,19 @@
     "allow": [
       "Bash(powershell *)",
       "Bash(npm run *)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)",
+      "Bash(Get-ChildItem -Path \"E:\\\\21 Strategy Lab\" -Recurse)",
+      "Bash(Select-Object FullName)",
+      "PowerShell(head *)",
+      "Bash(Get-ChildItem -Path \"E:\\\\21 Strategy Lab\" -Recurse -Directory -Force)",
+      "Bash(Select-Object -First 50)",
+      "PowerShell(Get-ChildItem -Path \"E:\\\\21 Strategy Lab\" -Force | Where-Object { !$_.PSIsContainer } | Select-Object -ExpandProperty Name)",
+      "PowerShell(Get-ChildItem -Path \"E:\\\\21 Strategy Lab\" -Recurse -Directory | Where-Object { $_.Name -match \"^\\(src|app|pages|components\\)$\" } | Select-Object FullName)",
+      "Bash(Get-ChildItem -Path \"E:\\\\21 Strategy Lab\" -Recurse -Directory)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5174)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Sort-Object)",
+      "PowerShell(Get-ChildItem -Path \"E:\\\\21 Strategy Lab\" -Force | Where-Object { -not $_.PSIsContainer })"
     ]
   }
 }

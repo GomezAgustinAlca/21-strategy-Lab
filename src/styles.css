@@ -87,7 +87,7 @@ kbd {
   position: relative;
   max-width: 1480px;
   margin: 0 auto;
-  padding: 18px 36px 48px;
+  padding: 20px 36px 56px;
   z-index: 1;
 }
 
@@ -125,8 +125,8 @@ kbd {
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ Layout â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 350px;
-  gap: 22px;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 24px;
   align-items: start;
 }
 .col { display: flex; flex-direction: column; gap: 14px; }
@@ -136,9 +136,9 @@ kbd {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 4px 4px 14px;
+  padding: 0 4px 18px;
   border-bottom: 1px solid var(--line-soft);
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .brand { display: flex; align-items: center; gap: 12px; }
@@ -205,7 +205,7 @@ kbd {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 14px;
+  padding: 9px 15px;
   background: rgba(255,255,255,0.02);
   border: 1px solid var(--line);
   color: var(--text-2);
@@ -213,7 +213,7 @@ kbd {
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+  transition: border-color 0.16s ease, color 0.16s ease, background 0.16s ease, transform 0.16s ease;
 }
 .ghost-btn:hover {
   border-color: var(--gold);
@@ -233,7 +233,7 @@ kbd {
   background: linear-gradient(180deg, rgba(20,25,45,0.7), rgba(14,18,36,0.5));
   border: 1px solid var(--line-soft);
   border-radius: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   overflow-x: auto;
   scrollbar-width: none;
   backdrop-filter: blur(10px);
@@ -291,7 +291,7 @@ kbd {
   background: linear-gradient(180deg, var(--panel-1) 0%, var(--panel-base) 100%);
   border: 1px solid var(--line-soft);
   border-radius: var(--r-lg);
-  padding: 18px 20px;
+  padding: 20px 22px;
   position: relative;
   overflow: hidden;
 }
@@ -343,7 +343,7 @@ kbd {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ HERO â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -602,7 +602,7 @@ kbd {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 11px 18px;
+  padding: 13px 18px;
   border-radius: 12px;
   border: 1px solid var(--line-soft);
   background: linear-gradient(180deg, var(--panel-1), var(--panel-base));
@@ -687,8 +687,8 @@ kbd {
 .modeswitch {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 12px 16px;
+  gap: 12px;
+  padding: 14px 16px;
   background: linear-gradient(180deg, rgba(20, 24, 40, 0.78), rgba(15, 18, 31, 0.78));
   border: 1px solid var(--line-soft);
   border-radius: var(--r-lg);
@@ -782,7 +782,7 @@ kbd {
 }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ Card grid panel & quick panel â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-.grid-panel { padding: 18px 20px 20px; }
+.grid-panel { padding: 20px 22px 22px; }
 .grid-panel__head, .quick-panel__head {
   display: flex;
   justify-content: space-between;
@@ -790,7 +790,7 @@ kbd {
   margin-bottom: 16px;
   gap: 12px;
 }
-.quick-panel { padding: 18px 20px 20px; }
+.quick-panel { padding: 20px 22px 22px; }
 .panel--quick {
   background: linear-gradient(180deg, rgba(22, 28, 48, 0.8) 0%, rgba(13, 16, 28, 0.95) 100%);
   border-color: rgba(79, 168, 204, 0.18);
@@ -821,7 +821,7 @@ kbd {
 .undo-btn:disabled, .undo-btn--disabled { opacity: 0.35; cursor: not-allowed; }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ Chip Group (Full Shoe) â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-.chipgroup { margin-bottom: 18px; }
+.chipgroup { margin-bottom: 22px; }
 .chipgroup:last-of-type { margin-bottom: 0; }
 
 .chipgroup__head {
@@ -888,7 +888,7 @@ kbd {
 .chipgroup__row {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  gap: 9px;
+  gap: 10px;
 }
 
 /* â”€â”€ Card Chip (analytical) â”€â”€ */
@@ -1188,7 +1188,7 @@ kbd {
 .panel--composition {
   background: linear-gradient(180deg, rgba(20, 24, 40, 0.78), rgba(13, 16, 28, 0.92));
 }
-.comp-panel { padding: 18px 20px 16px; }
+.comp-panel { padding: 20px 22px 18px; }
 .comp-pen {
   text-align: right;
   font-family: var(--serif);
@@ -1218,8 +1218,8 @@ kbd {
 .comp-rows {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 14px;
+  gap: 7px;
+  margin-top: 16px;
 }
 .comp-row {
   display: grid;
@@ -1305,9 +1305,9 @@ kbd {
 .comp-alerts {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 12px;
-  padding-top: 12px;
+  gap: 7px;
+  margin-top: 14px;
+  padding-top: 14px;
   border-top: 1px solid var(--line-soft);
 }
 .comp-alert {
@@ -1348,8 +1348,8 @@ kbd {
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ Shortcuts (shared) â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .shortcuts {
-  margin-top: 22px;
-  padding: 14px 14px 0;
+  margin-top: 20px;
+  padding: 14px 16px 0;
   border-top: 1px solid var(--line-soft);
   display: flex;
   flex-wrap: wrap;
@@ -1368,7 +1368,7 @@ kbd {
 }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ Sidebar â€” Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-.settings-panel { padding: 16px 18px; }
+.settings-panel { padding: 18px 20px; }
 .settings__decks {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1449,7 +1449,7 @@ kbd {
 }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ Sidebar â€” Pro â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-.pro-panel { padding: 16px 18px; }
+.pro-panel { padding: 18px 20px; }
 .pro-panel__head {
   display: flex;
   justify-content: space-between;
@@ -1515,7 +1515,7 @@ kbd {
 .upgrade-btn:hover .upgrade-btn__arrow { transform: translateX(3px); }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ Sidebar â€” Stats / Distribution â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-.stats-panel { padding: 16px 18px; }
+.stats-panel { padding: 18px 20px; }
 .dist-bar {
   display: flex;
   width: 100%;
@@ -1585,7 +1585,7 @@ kbd {
 }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ Timeline / Log â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-.log-panel { padding: 16px 18px; }
+.log-panel { padding: 18px 20px; }
 .log {
   max-height: 280px;
   overflow-y: auto;
@@ -2301,8 +2301,8 @@ kbd {
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ Responsive â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 1280px) {
-  .app { padding: 16px 24px 48px; }
-  .grid { grid-template-columns: minmax(0, 1fr) 320px; gap: 18px; }
+  .app { padding: 18px 24px 52px; }
+  .grid { grid-template-columns: minmax(0, 1fr) 330px; gap: 20px; }
 }
 
 @media (max-width: 1080px) {
@@ -2328,12 +2328,16 @@ kbd {
 }
 
 @media (max-width: 720px) {
-  .app { padding: 16px 14px 48px; }
-  .app--quick { padding-bottom: 160px; }
+  .app { padding: 16px 16px 52px; }
+  .app--quick { padding-bottom: 164px; }
   .quick-add-strip__row { gap: 8px; }
   .qa-btn { padding: 9px 12px; }
-  .topbar { flex-direction: column; gap: 12px; align-items: flex-start; }
+  .topbar { flex-direction: column; gap: 10px; align-items: flex-start; }
   .topbar__actions { width: 100%; justify-content: space-between; }
+
+  /* Compact header elements on mobile */
+  .status-pill { font-size: 11px; padding: 5px 10px; }
+  .ghost-btn { padding: 8px 12px; font-size: 12px; }
 
   /* hero goes fully stacked on mobile */
   .hero {
@@ -2348,11 +2352,17 @@ kbd {
   .hero__vsep { display: none; }
   .hero__num { font-size: clamp(56px, 18vw, 96px); }
 
-  .reco { gap: 10px; padding: 10px 14px; flex-wrap: wrap; }
+  .reco { gap: 10px; padding: 11px 14px; flex-wrap: wrap; }
   .reco__icon { width: 34px; height: 34px; }
   .reco__tc { padding-left: 10px; }
 
   .grid-panel { padding: 18px 16px; }
+
+  /* Mode switch touch targets */
+  .modeswitch__btn { min-height: 44px; }
+
+  /* Chip grid: slightly tighter minwidth for more cards per row */
+  .chipgroup__row { grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 8px; }
 
   /* Quick count sticky footer on mobile */
   .qci-sticky {
@@ -2384,12 +2394,36 @@ kbd {
 }
 
 @media (max-width: 420px) {
+  /* App layout */
+  .app { padding: 14px 12px 52px; }
+  .app--quick { padding-bottom: 164px; }
+
+  /* Navigation tabs: tighter to fit all 4 tabs without scrolling */
+  .tab { padding: 7px 9px; font-size: 11.5px; gap: 5px; }
+  .tab__lock { font-size: 8px; padding: 2px 4px; letter-spacing: 0.12em; }
+
+  /* Brand header more compact */
+  .brand__name { font-size: 15px; }
+  .brand__sub { font-size: 9.5px; }
+
+  /* Hero count */
   .hero__num { font-size: 52px; }
-  .reco__advice { font-size: 12px; }
+  .hero { padding: 14px 14px; gap: 10px; }
+
+  /* Recommendation bar */
+  .reco { padding: 10px 12px; gap: 8px; }
+  .reco__label { font-size: 14px; }
+  .reco__advice { font-size: 11.5px; }
+
+  /* Stats tiles */
   .stat-tile { padding: 10px 10px 8px; }
   .stat-tile__val { font-size: 22px; }
+
+  /* Locked tab previews */
   .lp-rxn { grid-template-columns: repeat(13, 1fr); height: 100px; }
   .lp-heat__cell { font-size: 10px; }
+
+  /* Quick count sticky footer */
   .qci-sticky .qci-btn { min-height: 82px; padding: 10px 10px 10px; }
   .qci-sticky .qci-btn__sym { font-size: 34px; }
   .qci-sticky .qci-btn__lbl { font-size: 20px; }
@@ -2445,7 +2479,7 @@ kbd {
 
 /* ── Keyboard shortcut bar ───────────────────────────────────────────────── */
 .kbd-bar {
-  margin-top: 18px;
+  margin-top: 20px;
   padding: 14px 16px 16px;
   border-top: 1px solid var(--line-soft);
   display: flex;
@@ -2638,7 +2672,7 @@ kbd {
 .training-wrap {
   display: flex;
   justify-content: center;
-  padding: 32px 20px 56px;
+  padding: 36px 20px 64px;
   min-height: 60vh;
   width: 100%;
 }
@@ -2653,7 +2687,7 @@ kbd {
   max-width: 560px;
   display: flex;
   flex-direction: column;
-  gap: 26px;
+  gap: 28px;
 }
 
 .drill-setup__eyebrow {
@@ -2719,10 +2753,10 @@ kbd {
   background: linear-gradient(180deg, var(--panel-1) 0%, var(--panel-base) 100%);
   border: 1px solid var(--line-soft);
   border-radius: 16px;
-  padding: 20px;
+  padding: 22px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
 }
 .drill-config__group { display: flex; flex-direction: column; gap: 8px; }
 .drill-config__label {
@@ -2786,7 +2820,7 @@ kbd {
   background: linear-gradient(160deg, rgba(245, 158, 11, 0.07) 0%, rgba(255,255,255,0.02) 65%);
   border: 1px solid rgba(245, 158, 11, 0.26);
   border-radius: 16px;
-  padding: 22px 22px 20px;
+  padding: 24px 24px 22px;
   overflow: hidden;
 }
 .focus-card::before {
@@ -2930,7 +2964,7 @@ kbd {
   align-items: center;
   width: 100%;
   min-height: 68vh;
-  padding: 28px 20px 0;
+  padding: 32px 20px 0;
 }
 .drill-runner__live-dot {
   width: 5px;
@@ -3607,6 +3641,32 @@ kbd {
   .drill-count-summary__rc { font-size: 42px; }
   .drill-count-summary__cell-val { font-size: 17px; }
   .drill-count-summary__cell { padding: 12px 6px; }
+
+  /* Comfortable touch targets for config buttons */
+  .drill-opt-btn { min-height: 44px; }
+
+  /* Full-width start/launch buttons */
+  .drill-start-btn { width: 100%; }
+
+  /* Tighter config and focus card */
+  .drill-config { padding: 16px; gap: 16px; }
+  .focus-card { padding: 18px 16px 16px; }
+  .drill-inputphase__prompt { font-size: 20px; }
+
+  /* Larger stepper buttons for touch */
+  .drill-stepper { width: 52px; height: 52px; font-size: 24px; }
+
+  /* Result actions: stack full-width for easy tapping */
+  .drill-result__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .drill-retry-btn,
+  .drill-next-btn,
+  .drill-result__actions .ghost-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -4270,14 +4330,19 @@ kbd {
   .analytics-intel-side { flex-direction: column; }
 }
 @media (max-width: 480px) {
-  .analytics-metrics-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .analytics-wrap { padding: 6px 0 40px; }
+  .analytics-metrics-grid { grid-template-columns: repeat(2, 1fr); gap: 7px; }
   .an-metric { padding: 12px 12px; }
   .an-metric__val { font-size: 18px; }
   .analytics-hd__title { font-size: 22px; }
   .an-hist-table { font-size: 11px; }
   .an-hist-table th, .an-hist-table td { padding: 7px 8px; }
-  .perf-matrix__grid { grid-template-columns: 72px repeat(3, 1fr); gap: 4px; }
-  .perf-matrix__cell { min-height: 48px; padding: 8px 4px; }
-  .perf-matrix__cell-acc { font-size: 13px; }
+  .perf-matrix__grid { grid-template-columns: 66px repeat(3, 1fr); gap: 4px; }
+  .perf-matrix__cell { min-height: 46px; padding: 7px 4px; }
+  .perf-matrix__cell-acc { font-size: 12px; }
+  .perf-matrix__cell-count { font-size: 9px; }
   .recent-trend__body { flex-direction: column; align-items: flex-start; }
+  /* Ensure insight text stays readable */
+  .an-insight__text { font-size: 12.5px; line-height: 1.5; }
+  .analytics-hd__sub { font-size: 12px; }
 }

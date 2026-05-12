@@ -108,11 +108,11 @@ function playSound(type) {
 // Recommendation tiers
 // ---------------------------------------------------------------------------
 const RECOS = [
-  { test: tc => tc >= 4,  tier: 'strong',    Icon: TrendingUp,      label: 'Strong Advantage Window',   text: 'Shoe composition currently favors high-efficiency decision-making.', tone: 'green-strong' },
-  { test: tc => tc >= 2,  tier: 'favorable', Icon: ArrowUpRight,    label: 'Favorable Distribution',    text: 'Conditions are above baseline. Maintain disciplined strategy.',       tone: 'green-soft' },
-  { test: tc => tc >= 0,  tier: 'neutral',   Icon: Minus,           label: 'Neutral Probability State', text: 'No significant composition edge detected.',                          tone: 'neutral' },
-  { test: tc => tc >= -2, tier: 'low-eff',   Icon: ArrowDownRight,  label: 'Low Efficiency Shoe',       text: 'Current distribution is below baseline efficiency.',                 tone: 'amber' },
-  { test: () => true,     tier: 'unfav',     Icon: TrendingDown,    label: 'Unfavorable Composition',   text: 'Shoe composition is strongly unfavorable.',                          tone: 'red' },
+  { test: tc => tc >= 4,  tier: 'strong',    Icon: TrendingUp,      label: 'Strong Advantage',          text: 'High-card concentration is elevated. Conditions favor the player.',   tone: 'green-strong' },
+  { test: tc => tc >= 2,  tier: 'favorable', Icon: ArrowUpRight,    label: 'Favorable Conditions',      text: 'Composition is above baseline. Maintain discipline and focus.',       tone: 'green-soft' },
+  { test: tc => tc >= 0,  tier: 'neutral',   Icon: Minus,           label: 'Neutral',                   text: 'Balanced composition. No meaningful edge in either direction.',      tone: 'neutral' },
+  { test: tc => tc >= -2, tier: 'low-eff',   Icon: ArrowDownRight,  label: 'Below Baseline',            text: 'Shoe composition is below baseline. Exercise caution.',              tone: 'amber' },
+  { test: () => true,     tier: 'unfav',     Icon: TrendingDown,    label: 'Unfavorable',               text: 'Shoe composition is strongly unfavorable. Low-card density is high.', tone: 'red' },
 ];
 const getRecommendation = (tc) => RECOS.find(r => r.test(tc));
 
@@ -213,7 +213,7 @@ function HeroCount({ runningCount, trueCount, decksRemaining, totalCards, prevRC
       <div className="hero__vsep" aria-hidden />
 
       <div className="hero__col hero__col--sub">
-        <HeroMetric label="Decks Rem." value={decksRemaining.toFixed(2)} />
+        <HeroMetric label="Decks Left" value={decksRemaining.toFixed(2)} />
         <HeroMetric label="Cards Seen" value={totalCards} />
       </div>
 
@@ -276,8 +276,8 @@ function ModeSwitch({ mode, onChange }) {
         <div className="modeswitch__title">Mode</div>
         <div className="modeswitch__sub">
           {mode === 'quick'
-            ? 'Category input only — optimized for speed'
-            : 'Exact ranks tracked — full composition analysis'}
+            ? 'Speed mode — category input, no rank tracking'
+            : 'Precision mode — full rank and composition tracking'}
         </div>
       </div>
       <div className="modeswitch__seg">
@@ -486,7 +486,7 @@ function QuickAddStrip({ onRapid, disabled }) {
     <div className="quick-add-strip">
       <div className="quick-add-strip__hd">
         <span className="quick-add-strip__title">Quick Add</span>
-        <span className="quick-add-strip__note">count only — does not update chip composition</span>
+        <span className="quick-add-strip__note">count only — ranks not tracked</span>
       </div>
       {disabled && (
         <div className="shoe-banner shoe-banner--strip">
@@ -642,7 +642,7 @@ function CompositionRow({ label, remaining, density, baseline, tone }) {
 function SettingsPanel({ decks, onDeckChange, soundEnabled, setSoundEnabled }) {
   return (
     <Panel tone="muted" className="settings-panel">
-      <div className="panel__title">Shoe Configuration</div>
+      <div className="panel__title">Shoe Setup</div>
       <div className="settings__decks">
         {DECK_OPTIONS.map(n => (
           <button
@@ -674,10 +674,10 @@ function SettingsPanel({ decks, onDeckChange, soundEnabled, setSoundEnabled }) {
 function ProToolsPanel({ onUpgrade }) {
   const features = [
     'Saved session history',
-    'Session export (CSV / PDF)',
+    'Advanced analytics & drift tracking',
+    'Export sessions (CSV / PDF)',
     'Stealth mode',
     'Cloud sync',
-    'EV deviation charts',
     'Cross-device access',
   ];
   return (
@@ -756,8 +756,8 @@ function LogPanel({ log }) {
         {log.length === 0 && (
           <div className="log__empty">
             <div className="log__empty-icon"><Activity size={22} /></div>
-            <div className="log__empty-text">Awaiting first card</div>
-            <div className="log__empty-sub">Tap a rank chip or use Quick Count to begin.</div>
+            <div className="log__empty-text">No cards tracked yet</div>
+            <div className="log__empty-sub">Select a card or tap a category to begin.</div>
           </div>
         )}
         {log.slice(0, 80).map((entry) => {
@@ -798,7 +798,7 @@ function DeckChangeModal({ targetDecks, onCancel, onConfirm }) {
           Change to {targetDecks} {targetDecks === 1 ? 'deck' : 'decks'}?
         </div>
         <div className="modal__sub modal__sub--confirm">
-          Changing to {targetDecks} {targetDecks === 1 ? 'deck' : 'decks'} will reset the current session because the current shoe exceeds that limit.
+          Switching to {targetDecks} {targetDecks === 1 ? 'deck' : 'decks'} will reset your current session — the active shoe exceeds that size.
         </div>
         <div className="modal__btn-row">
           <button className="modal__cancel-btn" onClick={onCancel} type="button">Cancel</button>
@@ -815,11 +815,11 @@ function DeckChangeModal({ targetDecks, onCancel, onConfirm }) {
 function ProModal({ open, onClose }) {
   if (!open) return null;
   const features = [
-    { t: 'Saved session history', s: 'Revisit and compare past shoes anytime.' },
-    { t: 'Advanced analytics',    s: 'Count history, EV curves, deviation charts.' },
-    { t: 'Training drills',       s: 'Speed reps, deck-end accuracy, basic strategy.' },
-    { t: 'Export & cloud sync',   s: 'CSV / PDF export and cross-device sync.' },
-    { t: 'Stealth mode',          s: 'Minimal interface for discreet practice.' },
+    { t: 'Saved session history', s: 'Every session stored. Compare and track long-term progress.' },
+    { t: 'Advanced analytics',    s: 'Drift curves, count trajectories, and deviation analysis.' },
+    { t: 'Training drills',       s: 'Speed sessions, deck-end accuracy, and structured programs.' },
+    { t: 'Export & cloud sync',   s: 'CSV and PDF export with cross-device access.' },
+    { t: 'Stealth mode',          s: 'Minimal, discreet interface for real-environment practice.' },
   ];
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -832,7 +832,7 @@ function ProModal({ open, onClose }) {
           </svg>
         </div>
         <div className="modal__title">Strategy Lab <span>Pro</span></div>
-        <div className="modal__sub">Unlock the full simulator suite.</div>
+        <div className="modal__sub">Analytics, training drills, stealth mode, and more.</div>
         <div className="modal__features">
           {features.map((f, i) => (
             <div className="modal__feature" key={i}>
@@ -1215,7 +1215,7 @@ function LockedTab({ tabId, onUpgrade }) {
             </svg>
           </div>
           <div className="locked-cta-card__title">This is a Pro feature</div>
-          <div className="locked-cta-card__sub">Get early access plus saved sessions, analytics, drills, exports and stealth mode.</div>
+          <div className="locked-cta-card__sub">Saved sessions, advanced analytics, training drills, and stealth mode.</div>
           <button className="upgrade-btn locked-cta" onClick={onUpgrade} type="button">
             <span>Get early access with Pro</span>
             <ArrowRight size={14} />
