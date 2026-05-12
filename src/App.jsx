@@ -2440,21 +2440,21 @@ function DrillHistoryTable({ history }) {
               return (
                 <tr key={d.id || i} className={d.isExact ? 'an-hist-row--exact' : ''}>
                   <td className="an-hist__date">{fmtDate(d.date)}</td>
-                  <td className="an-hist__speed">
+                  <td data-label="Speed" className="an-hist__speed">
                     {d.speed ? d.speed.charAt(0).toUpperCase() + d.speed.slice(1) : '—'}
                     {d.trainingMode === 'rhythm' && <span className="an-hist__rhythm-tag"> R</span>}
                     {d.assistLevel === 'practice'  && <span className="an-hist__assist-tag an-hist__assist-tag--practice"> P</span>}
                     {d.assistLevel === 'realistic' && <span className="an-hist__assist-tag an-hist__assist-tag--realistic"> Re</span>}
                   </td>
-                  <td>{d.deckCount}</td>
-                  <td>{d.cardCount}</td>
-                  <td className="an-hist__rc">{fmtRC(d.correctCount)}</td>
-                  <td className={`an-hist__ans ${d.isExact ? 'an-hist__ans--exact' : ''}`}>
+                  <td data-label="Decks">{d.deckCount}</td>
+                  <td data-label="Cards">{d.cardCount}</td>
+                  <td data-label="Correct RC" className="an-hist__rc">{fmtRC(d.correctCount)}</td>
+                  <td data-label="Answer" className={`an-hist__ans ${d.isExact ? 'an-hist__ans--exact' : ''}`}>
                     {fmtRC(d.answer)}
                   </td>
-                  <td className={`an-hist__err an-hist__err--${errTone}`}>±{d.error}</td>
-                  <td className={`an-hist__acc an-hist__acc--${accTone}`}>{d.accuracy}%</td>
-                  <td className="an-hist__time">{(d.elapsedMs / 1000).toFixed(1)}s</td>
+                  <td data-label="Error" className={`an-hist__err an-hist__err--${errTone}`}>±{d.error}</td>
+                  <td data-label="Accuracy" className={`an-hist__acc an-hist__acc--${accTone}`}>{d.accuracy}%</td>
+                  <td data-label="Time" className="an-hist__time">{(d.elapsedMs / 1000).toFixed(1)}s</td>
                 </tr>
               );
             })}
@@ -2484,32 +2484,34 @@ function PerformanceMatrix({ matrix }) {
           <div className="panel__sub">Avg accuracy · Speed × Cards</div>
         </div>
       </div>
-      <div className="perf-matrix__grid">
-        <div className="perf-matrix__corner" />
-        {sizes.map(sz => (
-          <div key={sz} className="perf-matrix__col-hd">{sz} cards</div>
-        ))}
-        {speeds.map(sp => (
-          <React.Fragment key={sp}>
-            <div className="perf-matrix__row-hd">{sp.charAt(0).toUpperCase() + sp.slice(1)}</div>
-            {sizes.map(sz => {
-              const cell = cells[`${sp}-${sz}`];
-              const tone = getCellTone(cell.avgAccuracy);
-              return (
-                <div key={`${sp}-${sz}`} className={`perf-matrix__cell perf-matrix__cell--${tone}`}>
-                  {cell.avgAccuracy !== null ? (
-                    <>
-                      <div className="perf-matrix__cell-acc">{cell.avgAccuracy}%</div>
-                      <div className="perf-matrix__cell-n">{cell.count}×</div>
-                    </>
-                  ) : (
-                    <div className="perf-matrix__cell-dash">—</div>
-                  )}
-                </div>
-              );
-            })}
-          </React.Fragment>
-        ))}
+      <div className="perf-matrix__scroll">
+        <div className="perf-matrix__grid">
+          <div className="perf-matrix__corner" />
+          {sizes.map(sz => (
+            <div key={sz} className="perf-matrix__col-hd">{sz} cards</div>
+          ))}
+          {speeds.map(sp => (
+            <React.Fragment key={sp}>
+              <div className="perf-matrix__row-hd">{sp.charAt(0).toUpperCase() + sp.slice(1)}</div>
+              {sizes.map(sz => {
+                const cell = cells[`${sp}-${sz}`];
+                const tone = getCellTone(cell.avgAccuracy);
+                return (
+                  <div key={`${sp}-${sz}`} className={`perf-matrix__cell perf-matrix__cell--${tone}`}>
+                    {cell.avgAccuracy !== null ? (
+                      <>
+                        <div className="perf-matrix__cell-acc">{cell.avgAccuracy}%</div>
+                        <div className="perf-matrix__cell-n">{cell.count}×</div>
+                      </>
+                    ) : (
+                      <div className="perf-matrix__cell-dash">—</div>
+                    )}
+                  </div>
+                );
+              })}
+            </React.Fragment>
+          ))}
+        </div>
       </div>
     </div>
   );

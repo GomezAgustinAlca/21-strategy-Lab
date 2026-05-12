@@ -55,6 +55,7 @@ body {
   color: var(--text);
   background: var(--bg-0);
   min-height: 100vh;
+  min-height: 100dvh;
   letter-spacing: 0.005em;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
@@ -96,6 +97,7 @@ kbd {
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  transform: translateZ(0);
   background:
     radial-gradient(900px 600px at 18% 8%,  var(--mood-glow), transparent 65%),
     radial-gradient(1100px 700px at 92% 110%, var(--mood-tint), transparent 60%),
@@ -115,6 +117,7 @@ kbd {
   content: '';
   position: fixed; inset: 0;
   pointer-events: none;
+  transform: translateZ(0);
   background-image: linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px);
   background-size: 100% 3px;
   opacity: 0.5;
@@ -1740,6 +1743,7 @@ kbd {
   display: grid; place-items: center;
   z-index: 100;
   animation: fade 0.25s ease;
+  transform: translateZ(0);
 }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 
@@ -2364,6 +2368,10 @@ kbd {
   /* Chip grid: slightly tighter minwidth for more cards per row */
   .chipgroup__row { grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 8px; }
 
+  /* Disable GPU compositing hints on touch — no tilt/hover on mobile */
+  .chip { will-change: auto; transform: none; }
+  .qci-btn { will-change: auto; }
+
   /* Quick count sticky footer on mobile */
   .qci-sticky {
     position: fixed;
@@ -2374,6 +2382,7 @@ kbd {
     -webkit-backdrop-filter: blur(20px);
     border-top: 1px solid var(--line-soft);
     z-index: 50;
+    transform: translateZ(0);
   }
   .qci-sticky .qci-btn {
     min-height: 96px;
@@ -3848,6 +3857,7 @@ kbd {
   margin-top: 14px;
   border-radius: 8px;
   border: 1px solid var(--line-soft);
+  max-width: 100%;
 }
 
 .an-hist-table {
@@ -4017,16 +4027,26 @@ kbd {
   gap: 14px;
 }
 
+/* Prevent flex/grid min-width:auto blowout — critical for mobile containment */
+.analytics-wrap > * { min-width: 0; }
+.analytics-intel-row > * { min-width: 0; }
+.analytics-intel-side > * { min-width: 0; }
+
 /* ── Performance Matrix ── */
 .perf-matrix {
   padding: 18px 20px;
+}
+.perf-matrix__scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 14px;
 }
 .perf-matrix__grid {
   display: grid;
   grid-template-columns: 100px repeat(3, 1fr);
   grid-template-rows: auto repeat(3, 1fr);
   gap: 6px;
-  margin-top: 14px;
+  min-width: 260px;
 }
 .perf-matrix__corner {
   /* empty top-left cell */
@@ -4328,6 +4348,62 @@ kbd {
   .analytics-metrics-grid { grid-template-columns: repeat(2, 1fr); }
   .an-trend__charts { grid-template-columns: 1fr; gap: 16px; }
   .analytics-intel-side { flex-direction: column; }
+
+  /* ── Drill history: table → stacked cards ── */
+  .an-hist__scroll {
+    overflow: visible;
+    border: none;
+    border-radius: 0;
+    background: none;
+    max-width: 100%;
+    margin-top: 10px;
+  }
+  .an-hist-table { display: block; width: 100%; }
+  .an-hist-table thead { display: none; }
+  .an-hist-table tbody { display: flex; flex-direction: column; gap: 8px; }
+  .an-hist-table tr {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 14px;
+    padding: 12px 14px;
+    background: linear-gradient(180deg, var(--panel-1) 0%, var(--panel-base) 100%);
+    border: 1px solid var(--line-soft);
+    border-radius: 10px;
+    width: 100%;
+  }
+  .an-hist-row--exact {
+    background: linear-gradient(180deg, rgba(16,185,129,0.06) 0%, rgba(16,185,129,0.02) 100%) !important;
+    border-color: rgba(16, 185, 129, 0.22) !important;
+  }
+  .an-hist-table td {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 0;
+    border-bottom: none;
+    background: none !important;
+    white-space: normal;
+    font-size: 13px;
+  }
+  .an-hist-table td::before {
+    content: attr(data-label);
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-4);
+    display: block;
+  }
+  /* Date spans full width as a card header */
+  .an-hist__date {
+    grid-column: 1 / -1;
+    font-size: 11px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid var(--line-soft);
+    margin-bottom: 2px;
+  }
+  .an-hist__date::before { display: none; }
+  .an-hist-table tbody tr:hover td { background: none; }
 }
 @media (max-width: 480px) {
   .analytics-wrap { padding: 6px 0 40px; }
@@ -4335,14 +4411,12 @@ kbd {
   .an-metric { padding: 12px 12px; }
   .an-metric__val { font-size: 18px; }
   .analytics-hd__title { font-size: 22px; }
-  .an-hist-table { font-size: 11px; }
-  .an-hist-table th, .an-hist-table td { padding: 7px 8px; }
-  .perf-matrix__grid { grid-template-columns: 66px repeat(3, 1fr); gap: 4px; }
-  .perf-matrix__cell { min-height: 46px; padding: 7px 4px; }
-  .perf-matrix__cell-acc { font-size: 12px; }
-  .perf-matrix__cell-count { font-size: 9px; }
-  .recent-trend__body { flex-direction: column; align-items: flex-start; }
-  /* Ensure insight text stays readable */
-  .an-insight__text { font-size: 12.5px; line-height: 1.5; }
   .analytics-hd__sub { font-size: 12px; }
+  .recent-trend__body { flex-direction: column; align-items: flex-start; }
+  .recent-trend__stats { flex-direction: row; display: flex; gap: 20px; flex-wrap: wrap; }
+  .an-insight__text { font-size: 12.5px; line-height: 1.5; }
+  .perf-matrix__cell { min-height: 46px; padding: 7px 5px; }
+  .perf-matrix__cell-acc { font-size: 13px; }
+  /* Cards are already active from 720px — reduce card padding */
+  .an-hist-table tr { padding: 10px 12px; }
 }

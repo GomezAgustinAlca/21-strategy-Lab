@@ -9,6 +9,7 @@ html { scroll-behavior: smooth; }
 
 .lp-root {
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg-0);
   color: var(--text);
   font-family: var(--sans);
@@ -25,6 +26,7 @@ html { scroll-behavior: smooth; }
   content: '';
   position: fixed;
   inset: 0;
+  transform: translateZ(0);
   background:
     radial-gradient(ellipse 70% 55% at 65% -5%, rgba(79, 168, 204, 0.07)  0%, transparent 60%),
     radial-gradient(ellipse 55% 45% at 5%  85%, rgba(16, 185, 129, 0.04)  0%, transparent 55%),
@@ -65,6 +67,7 @@ html { scroll-behavior: smooth; }
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   z-index: 200;
+  transform: translateZ(0);
 }
 
 .lp-nav__brand {
@@ -213,6 +216,7 @@ html { scroll-behavior: smooth; }
 
 .lp-hero {
   min-height: 100vh;
+  min-height: 100dvh;
   padding-top: 58px;
   display: flex;
   align-items: center;
@@ -661,8 +665,9 @@ html { scroll-behavior: smooth; }
   align-items: start;
 }
 
-.lp-analytics-left { display: flex; flex-direction: column; gap: 0; }
-.lp-analytics-right { display: flex; }
+.lp-analytics-layout > * { min-width: 0; }
+.lp-analytics-left { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+.lp-analytics-right { display: flex; min-width: 0; }
 
 .lp-insights {
   display: flex;
