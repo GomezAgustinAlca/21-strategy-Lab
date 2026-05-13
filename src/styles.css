@@ -823,6 +823,54 @@ kbd {
 .undo-btn:active:not(:disabled) { transform: scale(0.94); transition-duration: 0.06s; }
 .undo-btn:disabled, .undo-btn--disabled { opacity: 0.35; cursor: not-allowed; }
 
+/* ─────────── Mobile Session Actions Row ─────────── */
+.mobile-session-actions {
+  display: none;
+}
+.mobile-undo-btn,
+.mobile-reset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 20px;
+  min-height: 44px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+.mobile-undo-btn {
+  border: 1px solid var(--line-hard);
+  background: transparent;
+  color: var(--text-2);
+  flex: 1;
+  justify-content: center;
+}
+.mobile-undo-btn:hover:not(:disabled) {
+  border-color: var(--gold);
+  color: var(--gold-2);
+  background: var(--gold-soft);
+}
+.mobile-undo-btn:active:not(:disabled) { transform: scale(0.96); transition-duration: 0.07s; }
+.mobile-undo-btn:disabled,
+.mobile-undo-btn--disabled { opacity: 0.35; cursor: not-allowed; }
+.mobile-reset-btn {
+  border: 1px solid rgba(244, 63, 94, 0.22);
+  background: transparent;
+  color: rgba(244, 63, 94, 0.55);
+  justify-content: center;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+.mobile-reset-btn:hover {
+  border-color: rgba(244, 63, 94, 0.45);
+  color: rgba(244, 63, 94, 0.9);
+  background: rgba(244, 63, 94, 0.06);
+}
+.mobile-reset-btn:active { transform: scale(0.96); transition-duration: 0.07s; }
+
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ Chip Group (Full Shoe) â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .chipgroup { margin-bottom: 22px; }
 .chipgroup:last-of-type { margin-bottom: 0; }
@@ -2338,6 +2386,16 @@ kbd {
   .qa-btn { padding: 9px 12px; }
   .topbar { flex-direction: column; gap: 10px; align-items: flex-start; }
   .topbar__actions { width: 100%; justify-content: space-between; }
+  .topbar-reset-btn { display: none; }
+  .panel-undo-btn { display: none; }
+
+  /* Mobile session action row */
+  .mobile-session-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0 2px;
+  }
 
   /* Compact header elements on mobile */
   .status-pill { font-size: 11px; padding: 5px 10px; }

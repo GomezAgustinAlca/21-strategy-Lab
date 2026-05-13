@@ -22,15 +22,39 @@ const ASSIST_LEVEL_KEY     = 'strategy-lab-assist-level-v1';
 // ---------------------------------------------------------------------------
 // Audio
 // ---------------------------------------------------------------------------
-let _audioCtx = null;
+let _audioCtx      = null;
+let _audioUnlocked = false;
+
 function getAudioCtx() {
-  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (_audioCtx.state === 'suspended') _audioCtx.resume().catch(() => {});
+  if (!_audioCtx) {
+    try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch (e) { return null; }
+  }
   return _audioCtx;
 }
+
+// Must be called from within a user-gesture handler.
+// Resumes the AudioContext and plays a silent buffer — required to unlock iOS Safari.
+function unlockAudio() {
+  if (_audioUnlocked) return;
+  const ac = getAudioCtx();
+  if (!ac) return;
+  if (ac.state === 'suspended') ac.resume().catch(() => {});
+  try {
+    const buf = ac.createBuffer(1, 1, ac.sampleRate);
+    const src = ac.createBufferSource();
+    src.buffer = buf;
+    src.connect(ac.destination);
+    src.start(0);
+  } catch (e) {}
+  _audioUnlocked = true;
+}
+
 function playSound(type) {
   try {
     const ac = getAudioCtx();
+    // Bail silently if context is unavailable or still locked (suspended)
+    if (!ac || ac.state !== 'running') return;
     const now = ac.currentTime;
     const g = ac.createGain();
     g.connect(ac.destination);
@@ -660,7 +684,11 @@ function SettingsPanel({ decks, onDeckChange, soundEnabled, setSoundEnabled }) {
         <span className="settings__label">Sound effects</span>
         <button
           className={`toggle-btn ${soundEnabled ? 'toggle-btn--on' : ''}`}
-          onClick={() => setSoundEnabled(v => !v)}
+          onClick={() => {
+            const next = !soundEnabled;
+            if (next) unlockAudio();
+            setSoundEnabled(next);
+          }}
           type="button"
           title="Toggle UI sounds"
         >
@@ -789,6 +817,24 @@ function LogPanel({ log }) {
 // ---------------------------------------------------------------------------
 // Deck change confirmation modal
 // ---------------------------------------------------------------------------
+function ResetConfirmModal({ open, onCancel, onConfirm }) {
+  if (!open) return null;
+  return (
+    <div className="modal-overlay" onClick={onCancel}>
+      <div className="modal modal--confirm" onClick={e => e.stopPropagation()}>
+        <div className="modal__title modal__title--sm">Reset session?</div>
+        <div className="modal__sub modal__sub--confirm">
+          This will clear all tracked cards and counts. This cannot be undone.
+        </div>
+        <div className="modal__btn-row">
+          <button className="modal__cancel-btn" onClick={onCancel} type="button">Cancel</button>
+          <button className="modal__confirm-btn" onClick={onConfirm} type="button">Reset session</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DeckChangeModal({ targetDecks, onCancel, onConfirm }) {
   if (!targetDecks) return null;
   return (
@@ -2868,6 +2914,7 @@ function App() {
   const [soundEnabled, setSoundEnabled] = useState(initial?.soundEnabled ?? false);
 
   const [deckConfirm, setDeckConfirm] = useState(null);
+  const [resetConfirmPending, setResetConfirmPending] = useState(false);
 
   const idRef = useRef(initial?.lastId ?? 0);
   const prevRCRef = useRef(initial?.log?.[0]?.rc ?? 0);
@@ -2894,6 +2941,15 @@ function App() {
   useEffect(() => {
     saveState({ decks, log, cardCounts, mode, lastId: idRef.current, soundEnabled });
   }, [decks, log, cardCounts, mode, soundEnabled]);
+
+  // Unlock AudioContext on first touch for users who load with sound already enabled.
+  // touchstart fires before click, so the context is running by the time any click handler
+  // calls playSound(). Stays active (no-op after unlock) so re-enabling sound mid-session works.
+  useEffect(() => {
+    const tryUnlock = () => { if (soundEnabledRef.current) unlockAudio(); };
+    document.addEventListener('touchstart', tryUnlock, { passive: true });
+    return () => document.removeEventListener('touchstart', tryUnlock);
+  }, []);
 
   const stats = useMemo(() => {
     let high = 0, low = 0, mid = 0;
@@ -2951,13 +3007,26 @@ function App() {
     if (soundEnabledRef.current) playSound('undo');
   }, []);
 
-  const handleReset = useCallback(() => {
+  const doReset = useCallback(() => {
     setLog([]);
     setCardCounts({});
     prevRCRef.current = 0;
     idRef.current = 0;
     if (soundEnabledRef.current) playSound('reset');
   }, []);
+
+  const handleReset = useCallback(() => {
+    if (totalCardsRef.current > 0) {
+      setResetConfirmPending(true);
+    } else {
+      doReset();
+    }
+  }, [doReset]);
+
+  const confirmReset = useCallback(() => {
+    setResetConfirmPending(false);
+    doReset();
+  }, [doReset]);
 
   const handleDeckChange = useCallback((n) => {
     if (n === decksRef.current) return;
@@ -3048,7 +3117,7 @@ function App() {
             <span className="status-pill__dot" />
             <span>{mode === 'quick' ? 'Quick Count' : 'Full Tracking'}</span>
           </div>
-          <button className="ghost-btn" onClick={handleReset} type="button">
+          <button className="ghost-btn topbar-reset-btn" onClick={handleReset} type="button">
             <RefreshCw size={13} />
             <span>Reset Session</span>
           </button>
@@ -3071,6 +3140,26 @@ function App() {
             />
             <RecommendationBar trueCount={trueCount} />
 
+            <div className="mobile-session-actions">
+              <button
+                className={`mobile-undo-btn${log.length === 0 ? ' mobile-undo-btn--disabled' : ''}`}
+                onClick={handleUndo}
+                disabled={log.length === 0}
+                type="button"
+              >
+                <RotateCcw size={14} />
+                <span>Undo</span>
+              </button>
+              <button
+                className="mobile-reset-btn"
+                onClick={handleReset}
+                type="button"
+              >
+                <RefreshCw size={14} />
+                <span>Reset</span>
+              </button>
+            </div>
+
             {mode === 'quick' ? (
               <Panel tone="quick" className="quick-panel">
                 <div className="quick-panel__head">
@@ -3079,7 +3168,7 @@ function App() {
                     <div className="panel__sub">Tap as cards are dealt — category input only</div>
                   </div>
                   <button
-                    className={`undo-btn ${log.length === 0 ? 'undo-btn--disabled' : ''}`}
+                    className={`undo-btn panel-undo-btn ${log.length === 0 ? 'undo-btn--disabled' : ''}`}
                     onClick={handleUndo}
                     disabled={log.length === 0}
                     type="button"
@@ -3101,7 +3190,7 @@ function App() {
                     <div className="panel__sub">Tap each rank as it is dealt from the shoe</div>
                   </div>
                   <button
-                    className={`undo-btn ${log.length === 0 ? 'undo-btn--disabled' : ''}`}
+                    className={`undo-btn panel-undo-btn ${log.length === 0 ? 'undo-btn--disabled' : ''}`}
                     onClick={handleUndo}
                     disabled={log.length === 0}
                     type="button"
@@ -3175,6 +3264,11 @@ function App() {
         targetDecks={deckConfirm}
         onCancel={() => setDeckConfirm(null)}
         onConfirm={confirmDeckChange}
+      />
+      <ResetConfirmModal
+        open={resetConfirmPending}
+        onCancel={() => setResetConfirmPending(false)}
+        onConfirm={confirmReset}
       />
       <ProModal open={showPro} onClose={() => setShowPro(false)} />
     </div>
