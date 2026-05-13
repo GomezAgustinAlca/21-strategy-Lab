@@ -315,8 +315,10 @@ function ModeSwitch({ mode, onChange }) {
             onClick={() => onChange(m.id)}
           >
             <span className="modeswitch__icon">{m.icon}</span>
-            <span className="modeswitch__lbl">{m.label}</span>
-            <span className="modeswitch__pill">{m.sub}</span>
+            <span className="modeswitch__text">
+              <span className="modeswitch__lbl">{m.label}</span>
+              <span className="modeswitch__pill">{m.sub}</span>
+            </span>
           </button>
         ))}
       </div>
@@ -663,16 +665,25 @@ function CompositionRow({ label, remaining, density, baseline, tone }) {
 // ---------------------------------------------------------------------------
 // Mobile audio unlock button
 // ---------------------------------------------------------------------------
+function isAudioLocked() {
+  return !_audioCtx || _audioCtx.state === 'suspended';
+}
+
 function MobileAudioButton({ soundEnabled, onEnable }) {
-  if (soundEnabled) return null;
+  const [unlocked, setUnlocked] = useState(false);
+  const audioNeedsUnlock = !unlocked && isAudioLocked();
+  if (soundEnabled && !audioNeedsUnlock) return null;
+
+  const handleClick = () => {
+    unlockAudio();
+    setUnlocked(true);
+    if (!soundEnabled) onEnable();
+  };
+
   return (
-    <button
-      className="mobile-audio-btn"
-      onClick={() => { unlockAudio(); onEnable(); }}
-      type="button"
-    >
+    <button className="mobile-audio-btn" onClick={handleClick} type="button">
       <Volume2 size={13} />
-      <span>Enable Sound</span>
+      <span>{soundEnabled ? 'Unlock Audio' : 'Enable Sound'}</span>
     </button>
   );
 }

@@ -783,6 +783,13 @@ kbd {
   border-color: rgba(79, 168, 204,0.3);
   color: var(--gold-2);
 }
+.modeswitch__text {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ Card grid panel & quick panel â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .grid-panel { padding: 20px 22px 22px; }
@@ -2423,11 +2430,15 @@ kbd {
     max-width: 100%;
   }
   .mobile-undo-btn,
-  .mobile-reset-btn,
-  .mobile-audio-btn { min-width: 0; }
+  .mobile-reset-btn { min-width: 0; }
 
   /* Mobile audio unlock button */
-  .mobile-audio-btn { display: inline-flex; }
+  .mobile-audio-btn {
+    display: inline-flex;
+    flex-shrink: 0;
+    min-width: 0;
+    white-space: nowrap;
+  }
 
   /* Compact header elements on mobile */
   .status-pill { font-size: 11px; padding: 5px 10px; }
@@ -2455,7 +2466,12 @@ kbd {
   .grid-panel { padding: 18px 16px; }
 
   /* Touch targets — 44px minimum */
-  .modeswitch__btn { min-height: 44px; min-width: 0; }
+  .modeswitch { padding: 12px 12px; }
+  .modeswitch__seg { padding: 3px; }
+  .modeswitch__btn { min-height: 44px; min-width: 0; padding: 8px 10px; gap: 8px; }
+  .modeswitch__text { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .modeswitch__lbl { font-size: 13px; }
+  .modeswitch__pill { font-size: 8px; padding: 2px 5px; letter-spacing: 0.1em; }
   .tab { min-height: 44px; }
   .qa-btn { min-height: 44px; }
   .toggle-btn { min-height: 44px; }
