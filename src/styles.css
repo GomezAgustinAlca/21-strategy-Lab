@@ -871,6 +871,31 @@ kbd {
 }
 .mobile-reset-btn:active { transform: scale(0.96); transition-duration: 0.07s; }
 
+.mobile-audio-btn {
+  display: none;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 16px;
+  min-height: 44px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+  border: 1px solid rgba(79, 168, 204, 0.28);
+  background: transparent;
+  color: var(--text-2);
+  justify-content: center;
+  white-space: nowrap;
+}
+.mobile-audio-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold-2);
+  background: var(--gold-soft);
+}
+.mobile-audio-btn:active { transform: scale(0.96); transition-duration: 0.07s; }
+
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ Chip Group (Full Shoe) â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .chipgroup { margin-bottom: 22px; }
 .chipgroup:last-of-type { margin-bottom: 0; }
@@ -2397,6 +2422,9 @@ kbd {
     padding: 4px 0 2px;
   }
 
+  /* Mobile audio unlock button */
+  .mobile-audio-btn { display: inline-flex; }
+
   /* Compact header elements on mobile */
   .status-pill { font-size: 11px; padding: 5px 10px; }
   .ghost-btn { padding: 8px 12px; font-size: 12px; }
@@ -2997,6 +3025,12 @@ kbd {
   flex: 1;
   height: 1px;
   background: var(--line-soft);
+}
+
+.drill-start-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .drill-start-btn {
@@ -3713,6 +3747,7 @@ kbd {
   .drill-opt-btn { min-height: 44px; }
 
   /* Full-width start/launch buttons */
+  .drill-start-row { flex-direction: column; align-items: stretch; }
   .drill-start-btn { width: 100%; }
 
   /* Tighter config and focus card */

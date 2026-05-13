@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import {
   TrendingUp, TrendingDown, ArrowUp, ArrowDown, ArrowRight,
   ArrowUpRight, ArrowDownRight, Minus, RotateCcw, RefreshCw,
-  Check, Activity, Zap, AlertCircle, CircleDot, ChevronRight,
+  Check, Activity, Zap, AlertCircle, CircleDot, ChevronRight, Volume2,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -657,6 +657,23 @@ function CompositionRow({ label, remaining, density, baseline, tone }) {
         </span>
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Mobile audio unlock button
+// ---------------------------------------------------------------------------
+function MobileAudioButton({ soundEnabled, onEnable }) {
+  if (soundEnabled) return null;
+  return (
+    <button
+      className="mobile-audio-btn"
+      onClick={() => { unlockAudio(); onEnable(); }}
+      type="button"
+    >
+      <Volume2 size={13} />
+      <span>Enable Sound</span>
+    </button>
   );
 }
 
@@ -1754,7 +1771,7 @@ function DrillStatTile({ label, value, suffix, tone }) {
   );
 }
 
-function DrillSetup({ stats, onStart }) {
+function DrillSetup({ stats, onStart, soundEnabled, onEnableSound }) {
   const [speed, setSpeed]               = useState('medium');
   const [deckCount, setDeckCount]       = useState(6);
   const [cardCount, setCardCount]       = useState(20);
@@ -1899,14 +1916,17 @@ function DrillSetup({ stats, onStart }) {
         </div>
       </div>
 
-      <button
-        className="drill-start-btn"
-        onClick={() => onStart({ speed, deckCount, cardCount, trainingMode, assistLevel })}
-        type="button"
-      >
-        <Zap size={16} />
-        <span>Start Drill</span>
-      </button>
+      <div className="drill-start-row">
+        <button
+          className="drill-start-btn"
+          onClick={() => onStart({ speed, deckCount, cardCount, trainingMode, assistLevel })}
+          type="button"
+        >
+          <Zap size={16} />
+          <span>Start Drill</span>
+        </button>
+        <MobileAudioButton soundEnabled={soundEnabled} onEnable={onEnableSound} />
+      </div>
     </div>
   );
 }
@@ -2207,7 +2227,7 @@ function DrillEvaluating() {
 // ---------------------------------------------------------------------------
 // Training — main tab
 // ---------------------------------------------------------------------------
-function TrainingTab({ soundEnabled }) {
+function TrainingTab({ soundEnabled, setSoundEnabled }) {
   const [phase, setPhase]                     = useState('setup');
   const [config, setConfig]                   = useState(null);
   const [drillCards, setDrillCards]           = useState([]);
@@ -2317,7 +2337,7 @@ function TrainingTab({ soundEnabled }) {
   if (phase === 'setup') {
     return (
       <div className="training-wrap">
-        <DrillSetup stats={stats} onStart={handleStart} />
+        <DrillSetup stats={stats} onStart={handleStart} soundEnabled={soundEnabled} onEnableSound={() => setSoundEnabled(true)} />
       </div>
     );
   }
@@ -3158,6 +3178,7 @@ function App() {
                 <RefreshCw size={14} />
                 <span>Reset</span>
               </button>
+              <MobileAudioButton soundEnabled={soundEnabled} onEnable={() => setSoundEnabled(true)} />
             </div>
 
             {mode === 'quick' ? (
@@ -3244,7 +3265,7 @@ function App() {
 
       {activeTab === 'training' && (
         <main className="grid grid--single">
-          <TrainingTab soundEnabled={soundEnabled} />
+          <TrainingTab soundEnabled={soundEnabled} setSoundEnabled={setSoundEnabled} />
         </main>
       )}
 
