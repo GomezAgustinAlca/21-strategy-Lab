@@ -132,7 +132,7 @@ kbd {
   gap: 24px;
   align-items: start;
 }
-.col { display: flex; flex-direction: column; gap: 14px; }
+.col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€ Topbar â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .topbar {
@@ -887,7 +887,7 @@ kbd {
   background: transparent;
   color: var(--text-2);
   justify-content: center;
-  white-space: nowrap;
+  min-width: 0;
 }
 .mobile-audio-btn:hover {
   border-color: var(--gold);
@@ -2397,7 +2397,7 @@ kbd {
 }
 
 @media (max-width: 1080px) {
-  .grid { grid-template-columns: 1fr; }
+  .grid { grid-template-columns: minmax(0, 1fr); }
   .col--side { order: 2; }
   .lp-grid { grid-template-columns: repeat(2, 1fr); }
   .lp-card--hero, .lp-card--wide { grid-column: span 2; }
@@ -2420,7 +2420,11 @@ kbd {
     align-items: center;
     gap: 10px;
     padding: 4px 0 2px;
+    max-width: 100%;
   }
+  .mobile-undo-btn,
+  .mobile-reset-btn,
+  .mobile-audio-btn { min-width: 0; }
 
   /* Mobile audio unlock button */
   .mobile-audio-btn { display: inline-flex; }
@@ -2434,7 +2438,9 @@ kbd {
     flex-direction: column;
     padding: 16px 18px;
     gap: 12px;
+    max-width: 100%;
   }
+  .hero__col { min-width: 0; width: 100%; }
   .hero__col--rc { padding-right: 0; padding-bottom: 0; }
   .hero__col--tc,
   .hero__col--sub,
@@ -2448,8 +2454,11 @@ kbd {
 
   .grid-panel { padding: 18px 16px; }
 
-  /* Mode switch touch targets */
-  .modeswitch__btn { min-height: 44px; }
+  /* Touch targets — 44px minimum */
+  .modeswitch__btn { min-height: 44px; min-width: 0; }
+  .tab { min-height: 44px; }
+  .qa-btn { min-height: 44px; }
+  .toggle-btn { min-height: 44px; }
 
   /* Chip grid: slightly tighter minwidth for more cards per row */
   .chipgroup__row { grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 8px; }
